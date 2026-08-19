@@ -3,6 +3,9 @@ import 'package:business_manager_web_ui/src/features/auth/login_screen.dart';
 import 'package:business_manager_web_ui/src/features/auth/register_screen.dart';
 import 'package:business_manager_web_ui/src/features/auth/verify_email_screen.dart';
 import 'package:business_manager_web_ui/src/features/auth/wrapper.dart';
+import 'package:business_manager_web_ui/src/features/clients/client_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/clients/client_statement.dart';
+import 'package:business_manager_web_ui/src/features/clients/clients_view.dart';
 import 'package:business_manager_web_ui/src/features/contact_us_stub_screen.dart';
 import 'package:business_manager_web_ui/src/features/gallery/view_gallery.dart';
 import 'package:business_manager_web_ui/src/features/home/home_screen.dart';
@@ -11,6 +14,7 @@ import 'package:business_manager_web_ui/src/features/products/product_records.da
 import 'package:business_manager_web_ui/src/features/products/products_screen.dart';
 import 'package:business_manager_web_ui/src/features/route_stub_screen.dart';
 import 'package:business_manager_web_ui/src/features/sales/order_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/sales/order_terms.dart';
 import 'package:business_manager_web_ui/src/features/sales/orders_screen.dart';
 import 'package:business_manager_web_ui/src/features/sales/orders_view.dart';
 import 'package:business_manager_web_ui/src/features/settings/settings_screen.dart';
@@ -171,20 +175,147 @@ final goRouter = GoRouter(
         orderId: state.pathParameters['orderId'],
       ),
     ),
-    // order_terms.dart (delivery/payment terms config, 2,027 lines) —
-    // deferred to its own future stage; stubbed so the post-save navigation
-    // from OrderAddEdit doesn't crash.
+    // OrderTerms — Stage 10 scope: delivery scheduling, terms & conditions,
+    // charges, payment-reminder info, save. Invoice generation/printing and
+    // order statistics are deferred (see comment atop order_terms.dart).
     GoRoute(
       name: 'orderTerms',
       path: '/orderTerms/:uid/:orderId',
-      builder: (context, state) => const RouteStubScreen(title: 'Order Terms'),
+      builder: (context, state) => OrderTerms(
+        uid: state.pathParameters['uid'],
+        orderId: state.pathParameters['orderId'],
+      ),
+    ),
+    // Invoice settings screen isn't built yet — stubbed so the "Settings ›"
+    // link on OrderTerms' terms-and-conditions card doesn't crash.
+    GoRoute(
+      name: 'invoice_settings',
+      path: '/invoice_settings/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Invoice Settings'),
     ),
     // Clients feature isn't built yet — stubbed so the "add client" link
     // from OrderAddEdit's client typeahead empty-state doesn't crash.
     GoRoute(
       name: 'addClient',
       path: '/addClient/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Add Client'),
+      builder: (context, state) =>
+          ClientAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'editClient',
+      path: '/editClient/:uid/:clientId',
+      builder: (context, state) => ClientAddEdit(
+        uid: state.pathParameters['uid'],
+        clientId: state.pathParameters['clientId'],
+      ),
+    ),
+    // client_statement.dart (dart:io-based PDF export) — deferred like
+    // invoice generation; stubbed so the receipt-icon button doesn't crash.
+    GoRoute(
+      name: 'clientStatement',
+      path: '/clientStatement/:uid/:clientId',
+      builder: (context, state) => ClientStatment(
+        uid: state.pathParameters['uid'],
+        clientId: state.pathParameters['clientId'],
+      ),
+    ),
+    // Reached from Home's sales-statistics section (top clients, top
+    // products, upcoming payments) — Payments and top-products list screens
+    // aren't built yet either.
+    GoRoute(
+      name: 'paymentView',
+      path: '/paymentView/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Payments'),
+    ),
+    GoRoute(
+      name: 'editPayment',
+      path: '/editPayment/:uid/:paymentId',
+      builder: (context, state) => const RouteStubScreen(title: 'Payment'),
+    ),
+    GoRoute(
+      name: 'topProductsScreen',
+      path: '/topProductsScreen/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Top Products'),
+    ),
+    GoRoute(
+      name: 'termsPage',
+      path: '/termsPage/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Terms of Use'),
+    ),
+    // Settings/Menu destinations (Stage 12) — none of these sub-screens are
+    // built yet; each gets its own future stage.
+    GoRoute(
+      name: 'profile',
+      path: '/profile/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Profile'),
+    ),
+    GoRoute(
+      name: 'accounts',
+      path: '/accounts/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Account'),
+    ),
+    GoRoute(
+      name: 'app_settings',
+      path: '/app_settings/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'App Settings'),
+    ),
+    GoRoute(
+      name: 'clientsView',
+      path: '/clientsView/:uid',
+      builder: (context, state) =>
+          ClientsView(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'quoteView',
+      path: '/quoteView/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Quotes'),
+    ),
+    GoRoute(
+      name: 'viewSupplier',
+      path: '/viewSupplier/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Suppliers'),
+    ),
+    GoRoute(
+      name: 'purchaseView',
+      path: '/purchaseView/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Purchases'),
+    ),
+    GoRoute(
+      name: 'capitalExpenses',
+      path: '/capitalExpenses/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Capital & Expenses'),
+    ),
+    GoRoute(
+      name: 'reportsNavigation',
+      path: '/reportsNavigation/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Financial Reports'),
+    ),
+    GoRoute(
+      name: 'receipeView',
+      path: '/receipeView/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Recipes'),
+    ),
+    GoRoute(
+      name: 'rawItemsView',
+      path: '/rawItemsView/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Raw Materials'),
+    ),
+    GoRoute(
+      name: 'faq',
+      path: '/faq/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'FAQ'),
+    ),
+    GoRoute(
+      name: 'contactUsId',
+      path: '/contactUsId/:uid',
+      builder: (context, state) => const RouteStubScreen(title: 'Contact Us'),
     ),
   ],
 );

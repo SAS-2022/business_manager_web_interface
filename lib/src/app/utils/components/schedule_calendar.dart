@@ -209,26 +209,38 @@ class _ScheduleCalendarState extends State<ScheduleCalendar> {
       ),
       child: Padding(
         padding: responsive!.responsivePaddingM,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Theme.of(context).colorScheme.primary,
-                blurRadius: 6,
-                spreadRadius: 1,
+        // On a wide desktop window the grid would otherwise stretch to fill
+        // the whole content pane; since each row's height is tied to cell
+        // width via a fixed childAspectRatio, that makes rows taller than
+        // the maxHeight above can fit, silently clipping the bottom of the
+        // month. Capping the width (matching the app's existing 480 mobile-
+        // width convention) keeps cells — and therefore row height — from
+        // growing past what fits, and just centers the calendar instead.
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 480),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).colorScheme.primary,
+                    blurRadius: 6,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildHeader(),
-              _buildWeekdays(),
-              SizedBox(height: responsive!.scaleWidth(2)),
-              _buildCalendarDays(),
-            ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildHeader(),
+                  _buildWeekdays(),
+                  SizedBox(height: responsive!.scaleWidth(2)),
+                  _buildCalendarDays(),
+                ],
+              ),
+            ),
           ),
         ),
       ),
