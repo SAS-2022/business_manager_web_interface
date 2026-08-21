@@ -12,6 +12,41 @@ import 'package:business_manager_web_ui/src/features/home/home_screen.dart';
 import 'package:business_manager_web_ui/src/features/products/add_product_screen.dart';
 import 'package:business_manager_web_ui/src/features/products/product_records.dart';
 import 'package:business_manager_web_ui/src/features/products/products_screen.dart';
+import 'package:business_manager_web_ui/src/features/quotes/quotes_view.dart';
+import 'package:business_manager_web_ui/src/features/quotes/quote_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/quotes/quote_terms.dart';
+import 'package:business_manager_web_ui/src/features/purchases/view_purchases.dart';
+import 'package:business_manager_web_ui/src/features/purchases/add_edit_purchase.dart';
+import 'package:business_manager_web_ui/src/features/purchases/purchase_term.dart';
+import 'package:business_manager_web_ui/src/features/suppliers/supplier_view.dart';
+import 'package:business_manager_web_ui/src/features/suppliers/supplier_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/products/manufacturing/raw_material/raw_material_view.dart';
+import 'package:business_manager_web_ui/src/features/products/manufacturing/raw_material/raw_cost_add.dart';
+import 'package:business_manager_web_ui/src/features/purchases/material_receivable.dart';
+import 'package:business_manager_web_ui/src/features/user_details/profile_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/account_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/general_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/inventory_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/purchase_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/financial_settings.dart';
+import 'package:business_manager_web_ui/src/features/reports/sales_report.dart';
+import 'package:business_manager_web_ui/src/features/reports/inventory/inventory_report_variables.dart';
+import 'package:business_manager_web_ui/src/features/reports/profit_and_lost/pl_variables.dart';
+import 'package:business_manager_web_ui/src/features/reports/profit_and_lost/pl_summary.dart';
+import 'package:business_manager_web_ui/src/features/products/manufacturing/receipe_creation.dart';
+import 'package:business_manager_web_ui/src/features/payments/payment_view.dart';
+import 'package:business_manager_web_ui/src/features/capital_and_expenses/routing_page.dart';
+import 'package:business_manager_web_ui/src/features/reports/reports_navigation.dart';
+import 'package:business_manager_web_ui/src/features/products/manufacturing/receipe_view.dart';
+import 'package:business_manager_web_ui/src/features/faq/faq_view.dart';
+import 'package:business_manager_web_ui/src/features/user_details/contact_us.dart';
+import 'package:business_manager_web_ui/src/features/capital_and_expenses/expenses/view_expenses.dart';
+import 'package:business_manager_web_ui/src/features/capital_and_expenses/expenses/expenses_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/capital_and_expenses/assets/view_assets.dart';
+import 'package:business_manager_web_ui/src/features/capital_and_expenses/assets/assets_add_edit.dart';
+import 'package:business_manager_web_ui/src/features/faq/faq_edit_add.dart';
+import 'package:business_manager_web_ui/src/features/business/business_type.dart';
 import 'package:business_manager_web_ui/src/features/route_stub_screen.dart';
 import 'package:business_manager_web_ui/src/features/sales/order_add_edit.dart';
 import 'package:business_manager_web_ui/src/features/sales/order_terms.dart';
@@ -106,7 +141,16 @@ final goRouter = GoRouter(
       name: 'businessType',
       path: '/businessType/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Business Type'),
+          BusinessType(uid: state.pathParameters['uid']),
+    ),
+    // currencyLocation is an onboarding-only next-step this screen can
+    // redirect to when a user's currency/address aren't set yet — out of
+    // scope for now (a future stage, if ever needed post-onboarding).
+    GoRoute(
+      name: 'currencyLocation',
+      path: '/currencyLocation/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Currency & Location'),
     ),
     GoRoute(
       name: 'addProduct',
@@ -226,7 +270,9 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'paymentView',
       path: '/paymentView/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Payments'),
+      builder: (context, state) => PaymentView(
+        uid: state.pathParameters['uid'],
+      ),
     ),
     GoRoute(
       name: 'editPayment',
@@ -250,18 +296,57 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'profile',
       path: '/profile/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Profile'),
+      builder: (context, state) =>
+          ProfileSettings(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'accounts',
       path: '/accounts/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Account'),
+      builder: (context, state) =>
+          AccountSettings(uid: state.pathParameters['uid']),
+    ),
+    // MapLocationPicker is the next Account-adjacent stage — a live map
+    // location picker for the business-address section above.
+    GoRoute(
+      name: 'MapLocationPicker',
+      path: '/MapLocationPicker/:uid',
+      builder: (context, state) =>
+          const RouteStubScreen(title: 'Business Address'),
     ),
     GoRoute(
       name: 'app_settings',
       path: '/app_settings/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'App Settings'),
+          AppSettings(uid: state.pathParameters['uid']),
+    ),
+    // Destinations AppSettings' menu rows reach — each its own future stage.
+    GoRoute(
+      name: 'general_settings',
+      path: '/general_settings/:uid',
+      builder: (context, state) => GeneralSettingsWidget(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'inventory_settings',
+      path: '/inventory_settings/:uid',
+      builder: (context, state) => CreateInventory(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'purchase_settings',
+      path: '/purchase_settings/:uid',
+      builder: (context, state) => PurchaseSettings(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'financial_settings',
+      path: '/financial_settings/:uid',
+      builder: (context, state) => FinancialSettings(
+        uid: state.pathParameters['uid'],
+      ),
     ),
     GoRoute(
       name: 'clientsView',
@@ -272,50 +357,282 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'quoteView',
       path: '/quoteView/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Quotes'),
+      builder: (context, state) => QuoteView(uid: state.pathParameters['uid']),
+    ),
+    // QuoteAddEdit — shared add/edit form, reached three ways, mirroring
+    // OrderAddEdit's own routing. Quote terms is the next Quotes stage.
+    GoRoute(
+      name: 'addQuote',
+      path: '/addQuote/:uid',
+      builder: (context, state) =>
+          QuoteAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'addQuoteClient',
+      path: '/addQuoteClient/:uid/:clientId',
+      builder: (context, state) => QuoteAddEdit(
+        uid: state.pathParameters['uid'],
+        clientId: state.pathParameters['clientId'],
+      ),
+    ),
+    GoRoute(
+      name: 'editQuote',
+      path: '/editQuote/:uid/:quoteId',
+      builder: (context, state) => QuoteAddEdit(
+        uid: state.pathParameters['uid'],
+        quoteId: state.pathParameters['quoteId'],
+      ),
+    ),
+    GoRoute(
+      name: 'editQuoteOrder',
+      path: '/editQuoteOrder/:uid/:quoteId/:quoteToOrderId',
+      builder: (context, state) => QuoteAddEdit(
+        uid: state.pathParameters['uid'],
+        quoteId: state.pathParameters['quoteId'],
+        quoteToOrderId: state.pathParameters['quoteToOrderId']!.isEmpty
+            ? null
+            : state.pathParameters['quoteToOrderId'],
+      ),
+    ),
+    GoRoute(
+      name: 'quoteTerms',
+      path: '/quoteTerms/:uid/:quoteId',
+      builder: (context, state) => QuoteTerms(
+        uid: state.pathParameters['uid'],
+        quoteId: state.pathParameters['quoteId'],
+      ),
     ),
     GoRoute(
       name: 'viewSupplier',
       path: '/viewSupplier/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Suppliers'),
+      builder: (context, state) =>
+          SupplierView(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'purchaseView',
       path: '/purchaseView/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Purchases'),
+      builder: (context, state) =>
+          PurchaseView(uid: state.pathParameters['uid']),
+    ),
+    // PurchaseAddEdit — shared add/edit form, reached three ways, mirroring
+    // OrderAddEdit/QuoteAddEdit's own routing. PurchaseTerms is the next
+    // Purchases stage; receiveMaterial/addSupplier/rawItemsAdd are stubs
+    // reached from PurchaseAddEdit but belong to still-unbuilt features.
+    GoRoute(
+      name: 'addPurchase',
+      path: '/addPurchase/:uid',
+      builder: (context, state) =>
+          PurchaseAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'addPurchaseName',
+      path: '/addPurchaseName/:uid/:supplierId',
+      builder: (context, state) => PurchaseAddEdit(
+        uid: state.pathParameters['uid'],
+        supplierId: state.pathParameters['supplierId'],
+      ),
+    ),
+    GoRoute(
+      name: 'editPurchase',
+      path: '/editPurchase/:uid/:purchaseId',
+      builder: (context, state) => PurchaseAddEdit(
+        uid: state.pathParameters['uid'],
+        purchaseId: state.pathParameters['purchaseId'],
+      ),
+    ),
+    GoRoute(
+      name: 'purchaseTerms',
+      path: '/purchaseTerms/:uid/:purchaseId',
+      builder: (context, state) => PurchaseTerms(
+        uid: state.pathParameters['uid'],
+        purchaseId: state.pathParameters['purchaseId'],
+      ),
+    ),
+    GoRoute(
+      name: 'receiveMaterial',
+      path: '/receiveMaterial/:uid/:poId',
+      builder: (context, state) => MaterialReceivalClass(
+        uid: state.pathParameters['uid'],
+        poId: state.pathParameters['poId'],
+      ),
+    ),
+    GoRoute(
+      name: 'addSupplier',
+      path: '/addSupplier/:uid',
+      builder: (context, state) =>
+          SupplierAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'editSupplier',
+      path: '/editSupplier/:uid/:supplierId',
+      builder: (context, state) => SupplierAddEdit(
+        uid: state.pathParameters['uid'],
+        suppliedId: state.pathParameters['supplierId'],
+      ),
+    ),
+    GoRoute(
+      name: 'rawItemsAdd',
+      path: '/rawItemsAdd/:uid',
+      builder: (context, state) =>
+          RawMaterialAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'rawItemsEdit',
+      path: '/rawItemsEdit/:uid/:rawItemId',
+      builder: (context, state) => RawMaterialAddEdit(
+        uid: state.pathParameters['uid'],
+        rawItemId: state.pathParameters['rawItemId'],
+      ),
     ),
     GoRoute(
       name: 'capitalExpenses',
       path: '/capitalExpenses/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Capital & Expenses'),
+          RoutingPage(uid: state.pathParameters['uid']),
+    ),
+    // Destinations RoutingPage's two menu rows reach — each its own stage.
+    GoRoute(
+      name: 'viewExpenses',
+      path: '/viewExpenses/:uid',
+      builder: (context, state) =>
+          ExpensesView(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'addExpenses',
+      path: '/addExpenses/:uid',
+      builder: (context, state) =>
+          ExpensesAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'editExpenses',
+      path: '/editExpenses/:uid/:expenseId',
+      builder: (context, state) => ExpensesAddEdit(
+        uid: state.pathParameters['uid'],
+        expenseId: state.pathParameters['expenseId'],
+      ),
+    ),
+    GoRoute(
+      name: 'viewAssets',
+      path: '/viewAssets/:uid',
+      builder: (context, state) =>
+          AssetsView(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'addAsset',
+      path: '/addAsset/:uid',
+      builder: (context, state) =>
+          AssetsAddEdit(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'editAsset',
+      path: '/editAsset/:uid/:assetId',
+      builder: (context, state) => AssetsAddEdit(
+        uid: state.pathParameters['uid'],
+        assetId: state.pathParameters['assetId'],
+      ),
     ),
     GoRoute(
       name: 'reportsNavigation',
       path: '/reportsNavigation/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Financial Reports'),
+          ReportsNavigation(uid: state.pathParameters['uid']),
+    ),
+    // Destinations ReportsNavigation's three menu rows reach — each its own
+    // future stage.
+    GoRoute(
+      name: 'salesReport',
+      path: '/salesReport/:uid',
+      builder: (context, state) => SalesReport(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'inventoryReport',
+      path: '/inventoryReport/:uid',
+      builder: (context, state) => InventoryReportVariables(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'plVariables',
+      path: '/plVariables/:uid',
+      builder: (context, state) => PandLVariables(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'plSummary',
+      path: '/plSummary/:uid/:start/:end',
+      builder: (context, state) => PlSummary(
+        uid: state.pathParameters['uid'],
+        startDate: state.pathParameters['start'],
+        endDate: state.pathParameters['end'],
+        selectedOptions:
+            state.extra as Map<String, Map<String, dynamic>>?,
+      ),
     ),
     GoRoute(
       name: 'receipeView',
       path: '/receipeView/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Recipes'),
+      builder: (context, state) =>
+          ReceipeView(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'receipeViewProduct',
+      path: '/receipeView/:uid/:productId',
+      builder: (context, state) => ReceipeView(
+        uid: state.pathParameters['uid'],
+        productId: state.pathParameters['productId'],
+      ),
+    ),
+    // ReceipeCreation (add/edit) is the next Recipes stage — reached from
+    // ReceipeView's FAB and per-row edit button.
+    GoRoute(
+      name: 'receipeAdd',
+      path: '/receipeAdd/:uid',
+      builder: (context, state) => ReceipeCreation(
+        uid: state.pathParameters['uid'],
+      ),
+    ),
+    GoRoute(
+      name: 'receipeEdit',
+      path: '/receipeAdd/:uid/:receipeId',
+      builder: (context, state) => ReceipeCreation(
+        uid: state.pathParameters['uid'],
+        receipeId: state.pathParameters['receipeId'],
+      ),
     ),
     GoRoute(
       name: 'rawItemsView',
       path: '/rawItemsView/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Raw Materials'),
+          RawMaterialView(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'faq',
       path: '/faq/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'FAQ'),
+      builder: (context, state) => FaqView(uid: state.pathParameters['uid']),
+    ),
+    // FaqEditAdd (admin-only add/edit) is a future stage — reached only for
+    // users with UserDetails.level == 'admin'.
+    GoRoute(
+      name: 'faq_add',
+      path: '/faq_add/:uid',
+      builder: (context, state) =>
+          FaqEditAdd(uid: state.pathParameters['uid']),
+    ),
+    GoRoute(
+      name: 'faq_edit',
+      path: '/faq_edit/:uid/:questionId',
+      builder: (context, state) => FaqEditAdd(
+        uid: state.pathParameters['uid'],
+        questionid: state.pathParameters['questionId'],
+      ),
     ),
     GoRoute(
       name: 'contactUsId',
       path: '/contactUsId/:uid',
-      builder: (context, state) => const RouteStubScreen(title: 'Contact Us'),
+      builder: (context, state) => ContactUs(uid: state.pathParameters['uid']),
     ),
   ],
 );

@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/theme/app_theme.dart';
+import 'package:business_manager_web_ui/src/app/widgets/restart_widget.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/app_config.dart';
 import 'package:business_manager_web_ui/src/routing/app_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -45,38 +47,62 @@ void main() async {
     final hittingProdFromLocalhost = forceProdOverride &&
         (host == 'localhost' || host == '127.0.0.1');
 
-    runApp(ProviderScope(
-      child: MyApp(showProdWarningBanner: hittingProdFromLocalhost),
+    runApp(RestartWidget(
+      child: ProviderScope(
+        child: MyApp(showProdWarningBanner: hittingProdFromLocalhost),
+      ),
     ));
   }, (error, stack) {
     debugPrint('[runZonedGuarded] $error\n$stack');
   });
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key, this.showProdWarningBanner = false});
 
   final bool showProdWarningBanner;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // AppConfigNotifier.build() kicks off its own async _loadConfig() (reads
+    // the user's saved language/theme from shared_preferences) the first
+    // time this provider is read anywhere — no explicit call needed here.
+    // General Settings (Stage 22) is what lets a user actually change these;
+    // watching the provider directly means this widget rebuilds with the
+    // new theme/locale as soon as that happens, no manual listener needed.
+    final appConfig = ref.watch(appConfigProvider);
+
     return MaterialApp.router(
       title: 'Business Manager',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: appConfig.themeMode,
+      locale: appConfig.locale,
       routerConfig: goRouter,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) {
-        if (!showProdWarningBanner) return child!;
-        return Banner(
-          message: 'LIVE PRODUCTION DATA',
-          location: BannerLocation.topStart,
-          color: Colors.red,
-          child: child,
+        final textDirection = appConfig.language == AppLanguage.arabic
+            ? TextDirection.rtl
+            : TextDirection.ltr;
+        Widget result = MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: const TextScaler.linear(1)),
+          child: Directionality(
+            textDirection: textDirection,
+            child: child ?? const SizedBox.shrink(),
+          ),
         );
+        if (showProdWarningBanner) {
+          result = Banner(
+            message: 'LIVE PRODUCTION DATA',
+            location: BannerLocation.topStart,
+            color: Colors.red,
+            child: result,
+          );
+        }
+        return result;
       },
     );
   }

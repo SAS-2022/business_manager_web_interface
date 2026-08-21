@@ -30,6 +30,29 @@ class StorageService {
     }
   }
 
+  // Web rewrite of mobile's SaveFiles.savePdf (lib/src/app/utils/services/
+  // save_files.dart) — mobile writes the generated PdfDocument to a local
+  // temp file first (path_provider) purely so it has a File to hand
+  // uploadFileToStorage; putData needs no such intermediate step, so the
+  // whole temp-file dance (and the wrapper class) drops out entirely.
+  Future<String> uploadPdfToStorage({
+    required Uint8List bytes,
+    required String fileName,
+    required String folderName,
+  }) async {
+    try {
+      fs = FirebaseStorage.instance;
+      final ref = fs!.ref().child('$folderName/$fileName');
+      final upload = await ref.putData(
+        bytes,
+        SettableMetadata(contentType: 'application/pdf'),
+      );
+      return await upload.ref.getDownloadURL();
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
   //Will delete the file from storage
   Future<bool> deleteItemFromStorage(
       {String? url, String? uid, String? folder}) async {

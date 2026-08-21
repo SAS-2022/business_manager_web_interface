@@ -66,6 +66,7 @@ dependencies:
   syncfusion_flutter_charts: ^30.1.40
   syncfusion_flutter_pdf: ^30.1.40
   country_code_picker: ^3.3.0
+  currency_picker: ^2.0.21
 
 dev_dependencies:
   flutter_test:
