@@ -1,5 +1,6 @@
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
@@ -31,7 +32,6 @@ class _BusinessTypeState extends State<BusinessType> {
   final ErrorClass errorClass = ErrorClass();
   final SnackbarWidget snackbarWidget = SnackbarWidget();
   TextEditingController otherController = TextEditingController();
-  bool termsChecked = false, showingTerms = false;
 
   // Cached type list so we don't re-fetch on every setState
   List<String> _cachedTypes = [];
@@ -143,9 +143,7 @@ class _BusinessTypeState extends State<BusinessType> {
       future: getCurrentUser,
       builder: (context, usershot) {
         if (usershot.hasError) {
-          return Center(
-            child: MyText(text: errorClass.userNoTFoundError()),
-          );
+          return Center(child: MyText(text: errorClass.userNoTFoundError()));
         }
         if (usershot.connectionState == ConnectionState.waiting) {
           return const GradientSkeleton();
@@ -159,85 +157,88 @@ class _BusinessTypeState extends State<BusinessType> {
           controllerInitialized = true;
         }
 
-        // Terms check — unchanged logic
-        if (!termsChecked &&
-            (currentUser.termsAccepted == null ||
-                currentUser.termsAccepted == false)) {
-          termsChecked = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!showingTerms) {
-              showingTerms = true;
-              GoRouter.of(context).pushNamed('termsPage', pathParameters: {
-                'uid': currentUser.uid!
-              }).then((_) => showingTerms = false);
-            }
-          });
-        }
+        // Web deliberately does NOT auto-push to the terms page here the
+        // way mobile does — that meant Terms and Conditions was the very
+        // first thing a brand-new user saw, covering this screen before
+        // they'd even picked a business type. Terms acceptance is still
+        // reachable (and still enforced) via the dismissible banner on
+        // Home (see home_screen.dart), just not as a blocking first step.
 
         return SingleChildScrollView(
           padding: responsive!.responsivePaddingM,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Step header ───────────────────────────────────────────────
-              _buildHeader(),
-              SizedBox(height: responsive!.scaleHeight(24)),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppDimensions.maxGridContentWidth,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // ── Step header ───────────────────────────────────────────────
+                  _buildHeader(),
+                  SizedBox(height: responsive!.scaleHeight(24)),
 
-              // ── Business type grid ────────────────────────────────────────
-              _buildSectionLabel(appLoc!.businessType),
-              SizedBox(height: responsive!.scaleHeight(10)),
-              _buildTypeGrid(),
-              SizedBox(height: responsive!.scaleHeight(20)),
+                  // ── Business type grid ────────────────────────────────────────
+                  _buildSectionLabel(appLoc!.businessType),
+                  SizedBox(height: responsive!.scaleHeight(10)),
+                  _buildTypeGrid(),
+                  SizedBox(height: responsive!.scaleHeight(20)),
 
-              // ── Category list (shows after type selected) ─────────────────
-              if (currentUser.businessType != null) ...[
-                Divider(
-                  height: 0,
-                  thickness: 0.5,
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                ),
-                SizedBox(height: responsive!.scaleHeight(20)),
-                _buildSectionLabel(appLoc!.businessCategoryDes),
-                SizedBox(height: responsive!.scaleHeight(10)),
-                _buildCategoryList(),
-                SizedBox(height: responsive!.scaleHeight(12)),
-              ],
+                  // ── Category list (shows after type selected) ─────────────────
+                  if (currentUser.businessType != null) ...[
+                    Divider(
+                      height: 0,
+                      thickness: 0.5,
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.3),
+                    ),
+                    SizedBox(height: responsive!.scaleHeight(20)),
+                    _buildSectionLabel(appLoc!.businessCategoryDes),
+                    SizedBox(height: responsive!.scaleHeight(10)),
+                    _buildCategoryList(),
+                    SizedBox(height: responsive!.scaleHeight(12)),
+                  ],
 
-              // ── Other text field ──────────────────────────────────────────
-              if (currentUser.businessCategory != null &&
-                  currentUser.businessCategory!.toLowerCase() == 'other') ...[
-                MyTextField(
-                  controller: otherController,
-                  hintText: appLoc!.businessCategory,
-                  fontSize: responsive!.scaleFont(14),
-                ),
-                SizedBox(height: responsive!.scaleHeight(12)),
-              ],
+                  // ── Other text field ──────────────────────────────────────────
+                  if (currentUser.businessCategory != null &&
+                      currentUser.businessCategory!.toLowerCase() ==
+                          'other') ...[
+                    MyTextField(
+                      controller: otherController,
+                      hintText: appLoc!.businessCategory,
+                      fontSize: responsive!.scaleFont(14),
+                    ),
+                    SizedBox(height: responsive!.scaleHeight(12)),
+                  ],
 
-              // ── Continue button ───────────────────────────────────────────
-              SizedBox(height: responsive!.scaleHeight(8)),
-              GestureDetector(
-                onTap: updateUser,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                      vertical: responsive!.scaleHeight(15)),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: MyText(
-                      text: appLoc!.continueLabel,
-                      fontScale: responsive!.scaleFont(15),
-                      fontWeight: FontWeight.w500,
-                      fontColor: Theme.of(context).colorScheme.onPrimary,
+                  // ── Continue button ───────────────────────────────────────────
+                  SizedBox(height: responsive!.scaleHeight(8)),
+                  GestureDetector(
+                    onTap: updateUser,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(
+                        vertical: responsive!.scaleHeight(15),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: MyText(
+                          text: appLoc!.continueLabel,
+                          fontScale: responsive!.scaleFont(15),
+                          fontWeight: FontWeight.w500,
+                          fontColor: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  SizedBox(height: responsive!.scaleHeight(24)),
+                ],
               ),
-              SizedBox(height: responsive!.scaleHeight(24)),
-            ],
+            ),
           ),
         );
       },
@@ -313,78 +314,90 @@ class _BusinessTypeState extends State<BusinessType> {
 
         _cachedTypes = snap.data!;
 
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 10,
-            mainAxisSpacing: 10,
-            childAspectRatio: 1.5,
-          ),
-          itemCount: _cachedTypes.length,
-          itemBuilder: (context, i) {
-            final type = _cachedTypes[i];
-            final isSelected = currentUser.businessType == type;
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            // Add columns to use the available width instead of stacking
+            // cards with wasted horizontal space on wide screens — capped
+            // by the item count so a short list never leaves an empty slot.
+            const cardTargetWidth = 220.0;
+            final columns = (constraints.maxWidth / cardTargetWidth)
+                .floor()
+                .clamp(1, _cachedTypes.length);
 
-            return GestureDetector(
-              onTap: () {
-                setState(() {
-                  if (currentUser.businessType != type) {
-                    currentUser.businessCategory = null;
-                    otherController.clear();
-                  }
-                  currentUser.businessType = type;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.08)
-                      : Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.3),
-                  border: Border.all(
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                    width: isSelected ? 2 : 0.5,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      _iconForType(type),
-                      size: responsive!.scaleHeight(22),
+            return GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: columns,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: 1.5,
+              ),
+              itemCount: _cachedTypes.length,
+              itemBuilder: (context, i) {
+                final type = _cachedTypes[i];
+                final isSelected = currentUser.businessType == type;
+
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      if (currentUser.businessType != type) {
+                        currentUser.businessCategory = null;
+                        otherController.clear();
+                      }
+                      currentUser.businessType = type;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.08)
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surface.withValues(alpha: 0.3),
+                      border: Border.all(
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.3),
+                        width: isSelected ? 2 : 0.5,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    Column(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        MyText(
-                          text: type,
-                          fontScale: responsive!.scaleFont(13),
-                          fontWeight: FontWeight.w500,
-                          fontColor: isSelected
+                        Icon(
+                          _iconForType(type),
+                          size: responsive!.scaleHeight(22),
+                          color: isSelected
                               ? Theme.of(context).colorScheme.primary
-                              : null,
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            MyText(
+                              text: type,
+                              fontScale: responsive!.scaleFont(13),
+                              fontWeight: FontWeight.w500,
+                              fontColor: isSelected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : null,
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              },
             );
           },
         );
@@ -400,7 +413,8 @@ class _BusinessTypeState extends State<BusinessType> {
       builder: (context, snap) {
         if (snap.hasError) {
           return Center(
-              child: MyText(text: errorClass.businessCategoryMissing()));
+            child: MyText(text: errorClass.businessCategoryMissing()),
+          );
         }
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(child: LinearProgressIndicator());
@@ -441,17 +455,16 @@ class _BusinessTypeState extends State<BusinessType> {
                   duration: const Duration(milliseconds: 150),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? Theme.of(context)
-                            .colorScheme
-                            .primary
-                            .withValues(alpha: 0.06)
+                        ? Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.06)
                         : Colors.transparent,
                     border: !isLast
                         ? Border(
                             bottom: BorderSide(
-                              color: Theme.of(context)
-                                  .dividerColor
-                                  .withValues(alpha: 0.25),
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.25),
                               width: 0.5,
                             ),
                           )
@@ -462,11 +475,11 @@ class _BusinessTypeState extends State<BusinessType> {
                             bottomRight: Radius.circular(12),
                           )
                         : i == 0
-                            ? const BorderRadius.only(
-                                topLeft: Radius.circular(12),
-                                topRight: Radius.circular(12),
-                              )
-                            : null,
+                        ? const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          )
+                        : null,
                   ),
                   padding: EdgeInsets.symmetric(
                     horizontal: responsive!.scaleWidth(14),
@@ -504,9 +517,9 @@ class _BusinessTypeState extends State<BusinessType> {
                           border: Border.all(
                             color: isSelected
                                 ? Theme.of(context).colorScheme.primary
-                                : Theme.of(context)
-                                    .dividerColor
-                                    .withValues(alpha: 0.5),
+                                : Theme.of(
+                                    context,
+                                  ).dividerColor.withValues(alpha: 0.5),
                             width: isSelected ? 0 : 0.5,
                           ),
                         ),
@@ -544,9 +557,14 @@ class _BusinessTypeState extends State<BusinessType> {
   }
 
   Future<void> updateUser() async {
-    if (termsChecked) {
-      currentUser.termsAccepted = true;
-    }
+    // Removed: mobile's `if (termsChecked) currentUser.termsAccepted = true`
+    // here was only safe because termsChecked was always true by the time a
+    // user could reach this save button (set unconditionally on first
+    // build) — meaning it silently marked terms as accepted just from
+    // saving a business type, regardless of whether the terms page was
+    // ever actually shown. Since this screen no longer auto-pushes to
+    // terms (see above), termsAccepted should only ever be set by
+    // TermsPage's own save action.
     if (currentUser.businessType == null) {
       snackbarWidget.content = appLoc!.missingType;
       snackbarWidget.showSnack();
@@ -578,8 +596,10 @@ class _BusinessTypeState extends State<BusinessType> {
       if (currentUser.currency != null && currentUser.address != null) {
         GoRouter.of(context).pop();
       } else {
-        GoRouter.of(context).pushNamed('currencyLocation',
-            pathParameters: {'uid': currentUser.uid!});
+        GoRouter.of(context).pushNamed(
+          'currencyLocation',
+          pathParameters: {'uid': currentUser.uid!},
+        );
       }
     }
   }

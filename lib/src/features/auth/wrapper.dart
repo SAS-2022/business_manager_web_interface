@@ -6,7 +6,10 @@ import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/features/auth/verify_email_screen.dart';
 import 'package:business_manager_web_ui/src/features/home/home_screen.dart';
 import 'package:business_manager_web_ui/src/routing/app_shell.dart';
+import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
+import 'package:business_manager_web_ui/src/models/user_model.dart';
 import 'package:business_manager_web_ui/src/services/auth_service.dart';
+import 'package:business_manager_web_ui/src/services/database_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -25,7 +28,23 @@ class _WrapperState extends ConsumerState<Wrapper> {
   ResponsiveUtils? responsive;
   AppLocalizations? appLoc;
   AuthService auth = AuthService();
+  DatabaseService db = DatabaseService();
   final SnackbarWidget _snackbarWidget = SnackbarWidget();
+  Future<UserDetails>? _profileFuture;
+  String? _profileFutureUid;
+
+  // Mirrors mobile's InitialScreen.fetchUser() onboarding gate — never
+  // ported to this web Wrapper originally, which sent every email-verified
+  // user straight to Home regardless of whether they'd actually finished
+  // setting up a business type or currency. Cached per-uid so it doesn't
+  // refetch on every rebuild, only when the signed-in user actually changes.
+  Future<UserDetails> _getProfile(String uid) {
+    if (_profileFutureUid != uid) {
+      _profileFutureUid = uid;
+      _profileFuture = db.getCurrentUser(uid: uid);
+    }
+    return _profileFuture!;
+  }
 
   @override
   void initState() {
@@ -55,13 +74,52 @@ class _WrapperState extends ConsumerState<Wrapper> {
         if (user == null) return _buildInitialPage();
         if (!user.emailVerified) {
           return VerifyEmailScreen(email: user.email);
-        } else {
-          return AppShell(
-            uid: user.uid,
-            location: '/home/${user.uid}',
-            child: HomeScreen(uid: user.uid),
-          );
         }
+        return FutureBuilder<UserDetails>(
+          future: _getProfile(user.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Scaffold(body: Center(child: GradientSkeleton()));
+            }
+            if (snapshot.hasError) {
+              return Scaffold(
+                body: Center(child: MyText(text: snapshot.error.toString())),
+              );
+            }
+            final profile = snapshot.data;
+
+            // Step 1 of 2: business type/category not set yet.
+            if (profile != null &&
+                (profile.businessCategory == null ||
+                    profile.businessType == null)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  GoRouter.of(context).pushReplacementNamed('businessType',
+                      pathParameters: {'uid': user.uid});
+                }
+              });
+              return const Scaffold(body: Center(child: GradientSkeleton()));
+            }
+
+            // Step 2 of 2: currency not set yet.
+            if (profile != null &&
+                (profile.currency == null || profile.currency!.isEmpty)) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  GoRouter.of(context).pushReplacementNamed('currencyLocation',
+                      pathParameters: {'uid': user.uid});
+                }
+              });
+              return const Scaffold(body: Center(child: GradientSkeleton()));
+            }
+
+            return AppShell(
+              uid: user.uid,
+              location: '/home/${user.uid}',
+              child: HomeScreen(uid: user.uid),
+            );
+          },
+        );
       },
     );
   }

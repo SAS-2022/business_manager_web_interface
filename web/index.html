@@ -32,6 +32,20 @@
        during app startup on web, before any UI even renders. -->
   <meta name="google-signin-client_id" content="96067619762-dckq5qlc5b1i4gtl1r2ars304seomr13.apps.googleusercontent.com">
 
+  <!-- Google Maps JavaScript API — web-restricted key (HTTP referrer +
+       API restrictions to Maps JavaScript API / Geocoding API / Maps
+       Static API in Google Cloud Console), separate from mobile's own
+       Android/iOS-restricted keys (those use app-identity restrictions
+       that don't apply to a browser). Loaded here rather than lazily so
+       google.maps.* is available by the time MapViewWidget needs it,
+       both for the GoogleMap widget itself and for the client-side
+       google.maps.Geocoder used for reverse geocoding (see
+       google_geocoder_web.dart) — a web-native replacement for mobile's
+       geocoding package (Android/iOS only, no web support) and for the
+       Geocoding REST API (blocked by CORS when called directly from a
+       browser via http.get()). -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAztLZN9WAJrZiTMvi9PMkmv7JU8VfSiK0" async></script>
+
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 

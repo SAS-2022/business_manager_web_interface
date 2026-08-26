@@ -432,6 +432,7 @@
     "total": "الإجمالي",
     "paymentTerms": "شروط الدفع",
     "termsandConditions": "الشروط والأحكام",
+    "termsIntroWeb": "يرجى قراءة والموافقة على شروط الخدمة الخاصة بنا قبل المتابعة.",
     "termsandConditionDesc": "يجب على كل مستخدم الموافقة على شروط {provider} قبل المتابعة",
     "@termsandConditionDesc": {
       "type": "text",

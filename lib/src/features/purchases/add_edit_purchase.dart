@@ -4,6 +4,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/theme/responsive_utils.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
@@ -28,8 +29,12 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 class PurchaseAddEdit extends StatefulWidget {
-  const PurchaseAddEdit(
-      {super.key, this.uid, this.purchaseId, this.supplierId});
+  const PurchaseAddEdit({
+    super.key,
+    this.uid,
+    this.purchaseId,
+    this.supplierId,
+  });
   final String? uid;
   final String? purchaseId;
   final String? supplierId;
@@ -206,7 +211,8 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                     return Center(
                       child: MyText(
                         text: errorClass.userNoTFoundError(
-                            e: usershot.error.toString()),
+                          e: usershot.error.toString(),
+                        ),
                       ),
                     );
                   } else if (usershot.connectionState ==
@@ -285,44 +291,51 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
               top: responsive!.scaleHeight(12),
               bottom: responsive!.scaleHeight(70),
             ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.maxGridContentWidth,
+                ),
+                child: Stack(
                   children: [
-                    // ── Purchase ID bar ───────────────────────────────
-                    if (purchaseshot.data != null)
-                      _buildPurchaseIdBar(purchaseshot.data!),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Purchase ID bar ─────────────────────────
+                        if (purchaseshot.data != null)
+                          _buildPurchaseIdBar(purchaseshot.data!),
 
-                    // ── Supplier ──────────────────────────────────────
-                    _sectionLabel(appLoc!.supplierName),
-                    supplierNameTypeIn(),
+                        // ── Supplier ──────────────────────────────────
+                        _sectionLabel(appLoc!.supplierName),
+                        supplierNameTypeIn(),
 
-                    SizedBox(height: responsive!.scaleHeight(20)),
+                        SizedBox(height: responsive!.scaleHeight(20)),
 
-                    // ── Payment terms ─────────────────────────────────
-                    _sectionLabel(appLoc!.paymentTerms),
-                    paymentTermsWidget(),
+                        // ── Payment terms ───────────────────────────
+                        _sectionLabel(appLoc!.paymentTerms),
+                        paymentTermsWidget(),
 
-                    SizedBox(height: responsive!.scaleHeight(20)),
+                        SizedBox(height: responsive!.scaleHeight(20)),
 
-                    // ── Inventory location (conditional) ──────────────
-                    if (useInventory) ...[
-                      _sectionLabel(appLoc!.selectLocation),
-                      showInventoryOption(),
-                      SizedBox(height: responsive!.scaleHeight(20)),
-                    ],
+                        // ── Inventory location (conditional) ─────────
+                        if (useInventory) ...[
+                          _sectionLabel(appLoc!.selectLocation),
+                          showInventoryOption(),
+                          SizedBox(height: responsive!.scaleHeight(20)),
+                        ],
 
-                    // ── Products ──────────────────────────────────────
-                    _sectionLabel(appLoc!.product),
-                    productDetails(),
+                        // ── Products ────────────────────────────────
+                        _sectionLabel(appLoc!.product),
+                        productDetails(),
+                      ],
+                    ),
+
+                    // Cancelled overlay — logic unchanged
+                    if (purchaseshot.data?.status == constStrings.cancel)
+                      Center(child: _buildCancelledWidget()),
                   ],
                 ),
-
-                // Cancelled overlay — logic unchanged
-                if (purchaseshot.data?.status == constStrings.cancel)
-                  Center(child: _buildCancelledWidget()),
-              ],
+              ),
             ),
           );
         }
@@ -363,10 +376,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
             Container(
               padding: responsive!.responsivePaddingES,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: MyText(
@@ -386,10 +398,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
             Container(
               padding: responsive!.responsivePaddingES,
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: MyText(
@@ -579,8 +590,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
         } else if (suppliershot.connectionState == ConnectionState.waiting) {
           return const GradientSkeleton();
         } else {
-          controller =
-              TextEditingController(text: suppliershot.data?.supplierName!);
+          controller = TextEditingController(
+            text: suppliershot.data?.supplierName!,
+          );
           return TextField(
             controller: controller,
             focusNode: focusNode,
@@ -661,7 +673,8 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                 initialValue: purchase.storeLocation,
                 hint: Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: responsive!.scaleWidth(10)),
+                    horizontal: responsive!.scaleWidth(10),
+                  ),
                   child: MyText(
                     text: appLoc!.selectLocation,
                     fontScale: responsive!.scaleFont(13),
@@ -682,22 +695,23 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                 dropdownColor: Theme.of(context).scaffoldBackgroundColor,
                 items: currentUser?.inventoryLoc?.entries
                     .map<DropdownMenuItem<String>>((data) {
-                  return DropdownMenuItem<String>(
-                    value: data.value,
-                    child: MyText(
-                      text: data.value,
-                      fontScale: responsive!.scaleFont(13),
-                    ),
-                  );
-                }).toList(),
+                      return DropdownMenuItem<String>(
+                        value: data.value,
+                        child: MyText(
+                          text: data.value,
+                          fontScale: responsive!.scaleFont(13),
+                        ),
+                      );
+                    })
+                    .toList(),
                 onChanged:
                     selectedProduct != null && selectedProduct!.isNotEmpty
-                        ? null
-                        : (String? value) {
-                            if (value != null) {
-                              setState(() => purchase.storeLocation = value);
-                            }
-                          },
+                    ? null
+                    : (String? value) {
+                        if (value != null) {
+                          setState(() => purchase.storeLocation = value);
+                        }
+                      },
               ),
             ),
           )
@@ -723,13 +737,13 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
               Container(
                 margin: EdgeInsets.only(bottom: responsive!.scaleHeight(12)),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.3),
                   border: Border.all(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -742,8 +756,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                     height: 0,
                     thickness: 0.5,
                     indent: responsive!.scaleWidth(14),
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.25),
                   ),
                   itemBuilder: (context, index) {
                     var p = selectedProduct!.entries.elementAt(index).value;
@@ -797,7 +812,8 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                                   (OrderProducts product) {
                                     setState(() {
                                       selectedProduct![selectedProduct!.keys
-                                          .elementAt(index)] = product;
+                                              .elementAt(index)] =
+                                          product;
                                     });
                                   },
                                   currentUser!,
@@ -808,23 +824,23 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                                 width: responsive!.scaleWidth(32),
                                 height: responsive!.scaleHeight(32),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Theme.of(context)
-                                        .dividerColor
-                                        .withValues(alpha: 0.3),
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withValues(alpha: 0.3),
                                     width: 0.5,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.tune_outlined,
                                   size: responsive!.scaleHeight(15),
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -842,10 +858,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                                 width: responsive!.scaleWidth(32),
                                 height: responsive!.scaleHeight(32),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .error
-                                      .withValues(alpha: 0.08),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.error.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -923,7 +938,8 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                   );
                 },
                 itemBuilder: (context, value) {
-                  bool added = selectedProduct != null &&
+                  bool added =
+                      selectedProduct != null &&
                       selectedProduct!.isNotEmpty &&
                       selectedProduct!.containsKey(value.id);
                   return ListTile(
@@ -1000,7 +1016,8 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
                   );
                 },
                 itemBuilder: (context, value) {
-                  bool added = selectedProduct != null &&
+                  bool added =
+                      selectedProduct != null &&
                       selectedProduct!.isNotEmpty &&
                       selectedProduct!.containsKey(value.uid);
                   return ListTile(
@@ -1224,7 +1241,7 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
         createdAt: DateTime.now(),
         storeLocation: useInventory
             ? purchase.storeLocation ??
-                currentUser?.inventoryLoc?.entries.first.value
+                  currentUser?.inventoryLoc?.entries.first.value
             : null,
       );
       await psr.addPurchase(uid: widget.uid, purchase: newPurchase);
@@ -1295,7 +1312,7 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
         pdfUrl: purchase.pdfUrl,
         storeLocation: useInventory
             ? purchase.storeLocation ??
-                currentUser?.inventoryLoc?.entries.first.value
+                  currentUser?.inventoryLoc?.entries.first.value
             : null,
         deliveryTerms: purchase.deliveryTerms,
         returnTerms: purchase.returnTerms,
@@ -1335,16 +1352,18 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
     }
     matches.clear();
     for (var client in allSuppliers) {
-      bool match = queries.every((queryWord) =>
-          client.firstName!.toLowerCase().contains(queryWord) ||
-          client.lastName != null &&
-              client.lastName!.toLowerCase().contains(queryWord) ||
-          client.supplierName != null &&
-              client.supplierName!.toLowerCase().contains(queryWord) ||
-          client.phoneNumber != null &&
-              client.phoneNumber!['number']!.contains(queryWord) ||
-          client.email != null &&
-              client.email!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            client.firstName!.toLowerCase().contains(queryWord) ||
+            client.lastName != null &&
+                client.lastName!.toLowerCase().contains(queryWord) ||
+            client.supplierName != null &&
+                client.supplierName!.toLowerCase().contains(queryWord) ||
+            client.phoneNumber != null &&
+                client.phoneNumber!['number']!.contains(queryWord) ||
+            client.email != null &&
+                client.email!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(client);
     }
     return matches;
@@ -1362,11 +1381,13 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
     }
     matches.clear();
     for (var product in allProducts) {
-      bool match = queries.every((queryWord) =>
-          product.name.toLowerCase().contains(queryWord) ||
-          product.description.toLowerCase().contains(queryWord) ||
-          product.sku != null &&
-              product.sku!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            product.name.toLowerCase().contains(queryWord) ||
+            product.description.toLowerCase().contains(queryWord) ||
+            product.sku != null &&
+                product.sku!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(product);
     }
     return matches;
@@ -1384,9 +1405,11 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
     }
     matches.clear();
     for (var product in allRawItems) {
-      bool match = queries.every((queryWord) =>
-          product.name!.toLowerCase().contains(queryWord) ||
-          product.description!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            product.name!.toLowerCase().contains(queryWord) ||
+            product.description!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(product);
     }
     return matches;
@@ -1432,7 +1455,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
   }
 
   Future<void> _cancelPurchaseInPlace(
-      PurchaseModel purchase, String status) async {
+    PurchaseModel purchase,
+    String status,
+  ) async {
     purchase.status = status;
     if (currentUser != null &&
         currentUser!.updateProductCost != null &&
@@ -1459,7 +1484,9 @@ class _PurchaseAddEditState extends State<PurchaseAddEdit> {
         }
         if (product.id == null) continue;
         var selectedProduct = await ps.futureSingleProduct(
-            userId: widget.uid!, productId: product.id!);
+          userId: widget.uid!,
+          productId: product.id!,
+        );
         if (selectedProduct.id == null || selectedProduct.inventory == null) {
           continue;
         }

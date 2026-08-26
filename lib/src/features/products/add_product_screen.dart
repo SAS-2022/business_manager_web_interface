@@ -14,9 +14,7 @@ import 'package:business_manager_web_ui/src/models/product_model.dart';
 import 'package:business_manager_web_ui/src/models/user_model.dart';
 import 'package:business_manager_web_ui/src/services/database_service.dart';
 import 'package:business_manager_web_ui/src/services/product_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -265,8 +263,10 @@ class _AddEditProductState extends State<AddEditProduct> {
                         'productId': widget.productId!,
                       },
                     ),
-                    icon: Icon(Icons.data_exploration,
-                        size: responsive!.scaleHeight(22)),
+                    icon: Icon(
+                      Icons.data_exploration,
+                      size: responsive!.scaleHeight(22),
+                    ),
                   ),
                 // Save — unchanged logic
                 IconButton(
@@ -282,8 +282,8 @@ class _AddEditProductState extends State<AddEditProduct> {
                             description: descriptionController.text,
                             packingUnit:
                                 currentUser.businessType == 'manufacturing'
-                                    ? manufacturingPackingUnit
-                                    : packingUnitController.text,
+                                ? manufacturingPackingUnit
+                                : packingUnitController.text,
                             packingValue: packingController.text.isNotEmpty
                                 ? double.tryParse(packingController.text)!
                                 : 0,
@@ -296,7 +296,8 @@ class _AddEditProductState extends State<AddEditProduct> {
                             category: productCategoryController.text,
                             images: selectedImage,
                             receipeId: receipeId,
-                            inventory: inventoryValues)
+                            inventory: inventoryValues,
+                          )
                         : currentProduct = Product(
                             id: widget.productId,
                             // Preserve the original creation time — this
@@ -310,8 +311,8 @@ class _AddEditProductState extends State<AddEditProduct> {
                             description: descriptionController.text,
                             packingUnit:
                                 currentUser.businessType == 'manufacturing'
-                                    ? manufacturingPackingUnit
-                                    : packingUnitController.text,
+                                ? manufacturingPackingUnit
+                                : packingUnitController.text,
                             packingValue: packingController.text.isNotEmpty
                                 ? double.tryParse(packingController.text)!
                                 : 0,
@@ -324,7 +325,8 @@ class _AddEditProductState extends State<AddEditProduct> {
                             category: productCategoryController.text,
                             images: selectedImage,
                             receipeId: receipeId,
-                            inventory: inventoryValues);
+                            inventory: inventoryValues,
+                          );
                     widget.productId == null
                         ? await addProduct(false)
                         : await updateProduct();
@@ -337,7 +339,8 @@ class _AddEditProductState extends State<AddEditProduct> {
               builder: (context, usershot) {
                 if (usershot.hasError) {
                   return Center(
-                      child: MyText(text: errorClass.userNoTFoundError()));
+                    child: MyText(text: errorClass.userNoTFoundError()),
+                  );
                 }
                 if (usershot.connectionState == ConnectionState.waiting) {
                   return const GradientSkeleton();
@@ -415,160 +418,172 @@ class _AddEditProductState extends State<AddEditProduct> {
         children: [
           // ── Basic info ──────────────────────────────────────────────────
           _sectionLabel(appLoc!.basicInfo), // add to l10n: "Basic info"
-          _groupCard(children: [
-            _fieldRow(
-              icon: Icons.inventory_2_outlined,
-              child: FlushTextField(
-                controller: nameController,
-                hintText: appLoc!.productName,
-                textCapitalization: TextCapitalization.words,
-                maxLength: 40,
-                fontSize: responsive!.scaleFont(13),
+          _groupCard(
+            children: [
+              _fieldRow(
+                icon: Icons.inventory_2_outlined,
+                child: FlushTextField(
+                  controller: nameController,
+                  hintText: appLoc!.productName,
+                  textCapitalization: TextCapitalization.words,
+                  maxLength: 40,
+                  fontSize: responsive!.scaleFont(13),
+                ),
               ),
-            ),
-            // Item code
-            _fieldRow(
-              icon: Icons.qr_code_outlined,
-              child: widget.productId == null
-                  ? _buildCodeField()
-                  : Padding(
-                      padding: EdgeInsets.symmetric(
-                          vertical: responsive!.scaleHeight(12)),
-                      child: MyText(
-                        text: widget.productId ?? '',
-                        fontScale: responsive!.scaleFont(13),
-                      ),
-                    ),
-              trailing: widget.productId == null
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: Theme.of(context)
-                              .dividerColor
-                              .withValues(alpha: 0.3),
-                          width: 0.5,
+              // Item code
+              _fieldRow(
+                icon: Icons.qr_code_outlined,
+                child: widget.productId == null
+                    ? _buildCodeField()
+                    : Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: responsive!.scaleHeight(12),
+                        ),
+                        child: MyText(
+                          text: widget.productId ?? '',
+                          fontScale: responsive!.scaleFont(13),
                         ),
                       ),
-                      child: MyText(
-                        text: appLoc!.auto, // add to l10n: "Auto"
-                        fontScale: responsive!.scaleFont(10),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    )
-                  : null,
-            ),
-            _fieldRow(
-              icon: Icons.notes_outlined,
-              child: FlushTextField(
-                controller: descriptionController,
-                hintText: appLoc!.productDescription,
-                textCapitalization: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(13),
+                trailing: widget.productId == null
+                    ? Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.3),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: MyText(
+                          text: appLoc!.auto, // add to l10n: "Auto"
+                          fontScale: responsive!.scaleFont(10),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      )
+                    : null,
               ),
-            ),
-            _fieldRow(
-              icon: Icons.label_outline,
-              child: productCategory(),
-              trailing: Icon(
-                Icons.chevron_right,
-                size: responsive!.scaleHeight(16),
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              _fieldRow(
+                icon: Icons.notes_outlined,
+                child: FlushTextField(
+                  controller: descriptionController,
+                  hintText: appLoc!.productDescription,
+                  textCapitalization: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(13),
+                ),
               ),
-            ),
-          ]),
+              _fieldRow(
+                icon: Icons.label_outline,
+                child: productCategory(),
+                trailing: Icon(
+                  Icons.chevron_right,
+                  size: responsive!.scaleHeight(16),
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
 
           SizedBox(height: responsive!.scaleHeight(20)),
 
           // ── Packaging ───────────────────────────────────────────────────
           _sectionLabel(appLoc!.packaging), // add to l10n: "Packaging"
-          _groupCard(children: [
-            _fieldRow(
-              icon: Icons.grid_3x3_outlined,
-              child: FlushTextField(
-                controller: packingController,
-                hintText: currentUser.businessType == 'service'
-                    ? appLoc!.packService
-                    : appLoc!.pack,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                fontSize: responsive!.scaleFont(13),
+          _groupCard(
+            children: [
+              _fieldRow(
+                icon: Icons.grid_3x3_outlined,
+                child: FlushTextField(
+                  controller: packingController,
+                  hintText: currentUser.businessType == 'service'
+                      ? appLoc!.packService
+                      : appLoc!.pack,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  fontSize: responsive!.scaleFont(13),
+                ),
               ),
-            ),
-            _fieldRow(
-              icon: Icons.straighten_outlined,
-              child: currentUser.businessType == 'manufacturing'
-                  ? Padding(
-                      padding: EdgeInsets.symmetric(
-                          vertical: responsive!.scaleHeight(12)),
-                      child: MyText(
-                        text: manufacturingPackingUnit ?? appLoc!.packingUnit,
-                        fontScale: responsive!.scaleFont(13),
+              _fieldRow(
+                icon: Icons.straighten_outlined,
+                child: currentUser.businessType == 'manufacturing'
+                    ? Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: responsive!.scaleHeight(12),
+                        ),
+                        child: MyText(
+                          text: manufacturingPackingUnit ?? appLoc!.packingUnit,
+                          fontScale: responsive!.scaleFont(13),
+                        ),
+                      )
+                    : FlushTextField(
+                        controller: packingUnitController,
+                        hintText: appLoc!.packingUnit,
+                        textCapitalization: TextCapitalization.words,
+                        fontSize: responsive!.scaleFont(13),
                       ),
-                    )
-                  : FlushTextField(
-                      controller: packingUnitController,
-                      hintText: appLoc!.packingUnit,
-                      textCapitalization: TextCapitalization.words,
-                      fontSize: responsive!.scaleFont(13),
-                    ),
-            ),
-          ]),
+              ),
+            ],
+          ),
 
           SizedBox(height: responsive!.scaleHeight(20)),
 
           // ── Pricing ─────────────────────────────────────────────────────
           _sectionLabel(appLoc!.pricing), // add to l10n: "Pricing"
-          _groupCard(children: [
-            // Cost row — varies by business type
-            _fieldRow(
-              icon: Icons.monetization_on_outlined,
-              child: buildCostSection(),
-            ),
-            // Price row
-            _fieldRow(
-              icon: Icons.receipt_outlined,
-              child: buildPriceSection(),
-            ),
-            // Profit margin row
-            _fieldRow(
-              icon: Icons.trending_up_outlined,
-              child: Padding(
-                padding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(10)),
-                child: MyText(
-                  text: appLoc!.profitMargin,
-                  fontScale: responsive!.scaleFont(13),
+          _groupCard(
+            children: [
+              // Cost row — varies by business type
+              _fieldRow(
+                icon: Icons.monetization_on_outlined,
+                child: buildCostSection(),
+              ),
+              // Price row
+              _fieldRow(
+                icon: Icons.receipt_outlined,
+                child: buildPriceSection(),
+              ),
+              // Profit margin row
+              _fieldRow(
+                icon: Icons.trending_up_outlined,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: responsive!.scaleHeight(10),
+                  ),
+                  child: MyText(
+                    text: appLoc!.profitMargin,
+                    fontScale: responsive!.scaleFont(13),
+                  ),
+                ),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: showColor(),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: MyText(
+                    text: '${profit.toStringAsFixed(2)}%',
+                    fontScale: responsive!.scaleFont(12),
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              trailing: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: showColor(),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: MyText(
-                  text: '${profit.toStringAsFixed(2)}%',
-                  fontScale: responsive!.scaleFont(12),
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ]),
+            ],
+          ),
 
           SizedBox(height: responsive!.scaleHeight(20)),
 
           // ── Images ──────────────────────────────────────────────────────
           _sectionLabel(appLoc!.images),
-          _groupCard(children: [
-            productImages(),
-          ]),
+          _groupCard(children: [productImages()]),
 
           SizedBox(height: responsive!.scaleHeight(20)),
 
@@ -589,8 +604,9 @@ class _AddEditProductState extends State<AddEditProduct> {
               onTap: deleteProduct,
               child: Container(
                 width: double.infinity,
-                padding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(14)),
+                padding: EdgeInsets.symmetric(
+                  vertical: responsive!.scaleHeight(14),
+                ),
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
@@ -635,7 +651,8 @@ class _AddEditProductState extends State<AddEditProduct> {
         if (idsshot.hasError) {
           return Center(
             child: MyText(
-                text: errorClass.failedToGenerateId(idsshot.error.toString())),
+              text: errorClass.failedToGenerateId(idsshot.error.toString()),
+            ),
           );
         }
         if (idsshot.connectionState == ConnectionState.waiting) {
@@ -699,9 +716,13 @@ class _AddEditProductState extends State<AddEditProduct> {
                         setState(() => isLoading = true);
                         for (var image in images) {
                           var imageUrl = await ps.futureSingleImage(
-                              userId: widget.uid!, imageId: image);
-                          imageUrls.add(imageUrl?.imageUrl ??
-                              'assets/images/placeholder.png');
+                            userId: widget.uid!,
+                            imageId: image,
+                          );
+                          imageUrls.add(
+                            imageUrl?.imageUrl ??
+                                'assets/images/placeholder.png',
+                          );
                         }
                         setState(() => isLoading = false);
                         if (imageUrls.isEmpty) return;
@@ -722,56 +743,76 @@ class _AddEditProductState extends State<AddEditProduct> {
                         borderRadius: BorderRadius.circular(8),
                         child: FutureBuilder(
                           future: ps.futureSingleImage(
-                              userId: widget.uid!, imageId: images[index]),
+                            userId: widget.uid!,
+                            imageId: images[index],
+                          ),
                           builder: (context, photoshot) {
                             if (photoshot.connectionState ==
                                 ConnectionState.waiting) {
                               return Container(
                                 width: responsive!.scaleHeight(72),
                                 height: responsive!.scaleHeight(72),
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 child: const Center(
-                                    child: CircularProgressIndicator(
-                                        strokeWidth: 2)),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                ),
                               );
                             }
                             if (photoshot.hasData &&
                                 photoshot.data?.imageUrl != null) {
-                              return CachedNetworkImage(
+                              // Image.network instead of CachedNetworkImage
+                              // — the latter fetches bytes over HTTP to
+                              // cache them, which needs CORS headers
+                              // Firebase Storage doesn't send by default and
+                              // fails on web.
+                              return Image.network(
+                                photoshot.data!.imageUrl!,
                                 width: responsive!.scaleHeight(72),
                                 height: responsive!.scaleHeight(72),
-                                imageUrl: photoshot.data!.imageUrl!,
-                                cacheManager: CacheManager(Config(
-                                  'customCacheKey',
-                                  stalePeriod: const Duration(days: 7),
-                                  maxNrOfCacheObjects: 100,
-                                )),
-                                placeholder: (_, __) => Container(
-                                  width: responsive!.scaleHeight(72),
-                                  height: responsive!.scaleHeight(72),
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
-                                ),
-                                errorWidget: (_, __, ___) =>
-                                    const Icon(Icons.broken_image_outlined),
                                 fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    width: responsive!.scaleHeight(72),
+                                    height: responsive!.scaleHeight(72),
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surfaceContainerHighest,
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) =>
+                                    Container(
+                                      width: responsive!.scaleHeight(72),
+                                      height: responsive!.scaleHeight(72),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
+                                      child: Icon(
+                                        Icons.broken_image_outlined,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
                               );
                             }
                             return Container(
                               width: responsive!.scaleHeight(72),
                               height: responsive!.scaleHeight(72),
                               decoration: BoxDecoration(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Image.asset(
-                                  'assets/images/placeholder.png',
-                                  fit: BoxFit.cover),
+                                'assets/images/placeholder.png',
+                                fit: BoxFit.cover,
+                              ),
                             );
                           },
                         ),
@@ -782,11 +823,13 @@ class _AddEditProductState extends State<AddEditProduct> {
                 // Add button
                 GestureDetector(
                   onTap: () async {
-                    var result = await GoRouter.of(context)
-                        .pushNamed('viewImages', pathParameters: {
-                      'uid': widget.uid!,
-                      'showAddButton': 'true'
-                    });
+                    var result = await GoRouter.of(context).pushNamed(
+                      'viewImages',
+                      pathParameters: {
+                        'uid': widget.uid!,
+                        'showAddButton': 'true',
+                      },
+                    );
                     // ignore: use_build_context_synchronously
                     FocusScope.of(context).unfocus();
                     if (result != null) {
@@ -799,9 +842,9 @@ class _AddEditProductState extends State<AddEditProduct> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.4),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.4),
                         width: 0.5,
                         style: BorderStyle.solid,
                       ),
@@ -868,13 +911,16 @@ class _AddEditProductState extends State<AddEditProduct> {
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 isDense: true,
-                contentPadding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(12)),
+                contentPadding: EdgeInsets.symmetric(
+                  vertical: responsive!.scaleHeight(12),
+                ),
                 suffix: controller.text.isNotEmpty
                     ? GestureDetector(
                         onTap: () => setState(() => controller.clear()),
-                        child: Icon(Icons.clear,
-                            size: responsive!.scaleHeight(14)),
+                        child: Icon(
+                          Icons.clear,
+                          size: responsive!.scaleHeight(14),
+                        ),
                       )
                     : null,
               ),
@@ -936,10 +982,12 @@ class _AddEditProductState extends State<AddEditProduct> {
             left: 0,
             right: 0,
             child: Container(
-              margin:
-                  EdgeInsets.symmetric(horizontal: responsive!.scaleWidth(16)),
-              padding:
-                  EdgeInsets.symmetric(vertical: responsive!.scaleHeight(10)),
+              margin: EdgeInsets.symmetric(
+                horizontal: responsive!.scaleWidth(16),
+              ),
+              padding: EdgeInsets.symmetric(
+                vertical: responsive!.scaleHeight(10),
+              ),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 color: Colors.blueGrey.withValues(alpha: 0.9),
@@ -1007,8 +1055,8 @@ class _AddEditProductState extends State<AddEditProduct> {
             if (mounted) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 setState(() {
-                  costController.text =
-                      (oneItemCost * packValue).toStringAsFixed(2);
+                  costController.text = (oneItemCost * packValue)
+                      .toStringAsFixed(2);
                 });
               });
             } else {
@@ -1077,7 +1125,10 @@ class _AddEditProductState extends State<AddEditProduct> {
   Future<bool> _onWillPop() async {
     if (_hasProductChanged()) {
       return await warningDialog.showWarningDialog(
-          context, appLoc!, appLoc!.unsavedData);
+        context,
+        appLoc!,
+        appLoc!.unsavedData,
+      );
     }
     return true;
   }
@@ -1211,17 +1262,22 @@ class _AddEditProductState extends State<AddEditProduct> {
           child: StreamBuilder<Product>(
             stream: currentProduct?.id != null
                 ? ps.streamSingleProduct(
-                    userId: widget.uid, productId: currentProduct?.id)
+                    userId: widget.uid,
+                    productId: currentProduct?.id,
+                  )
                 : null,
             builder: (context, productshot) {
               if (productshot.hasError) {
                 return FutureBuilder(
                   future: ps.checkIfProductExist(
-                      widget.uid!, currentProduct?.id ?? ''),
+                    widget.uid!,
+                    currentProduct?.id ?? '',
+                  ),
                   builder: (context, snap) {
                     if (snap.data != null && snap.data!) {
                       return Center(
-                          child: MyText(text: errorClass.productNotLoading()));
+                        child: MyText(text: errorClass.productNotLoading()),
+                      );
                     }
                     return Center(child: MyText(text: appLoc!.costValue));
                   },
@@ -1236,12 +1292,15 @@ class _AddEditProductState extends State<AddEditProduct> {
               return FutureBuilder(
                 future: receipeId != null
                     ? ps.futureSingleReceipe(
-                        userId: widget.uid, receipeId: receipeId)
+                        userId: widget.uid,
+                        receipeId: receipeId,
+                      )
                     : null,
                 builder: (context, receipeshot) {
                   if (receipeshot.hasError) {
                     return Center(
-                        child: MyText(text: errorClass.receipesCostFailed()));
+                      child: MyText(text: errorClass.receipesCostFailed()),
+                    );
                   }
                   if (receipeshot.hasData) {
                     final receipe = receipeshot.data!;
@@ -1251,18 +1310,19 @@ class _AddEditProductState extends State<AddEditProduct> {
                       manufacturingPacking = receipe.packingValue;
                       if (receipeTotalCost != null &&
                           manufacturingPacking != null) {
-                        costController.text = ((receipeTotalCost! /
-                                    manufacturingPacking!) *
-                                (double.tryParse(packingController.text) ?? 1))
-                            .toStringAsFixed(3);
+                        costController.text =
+                            ((receipeTotalCost! / manufacturingPacking!) *
+                                    (double.tryParse(packingController.text) ??
+                                        1))
+                                .toStringAsFixed(3);
                       }
                     }
                     return Container(
                       height: responsive!.scaleHeight(40),
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
@@ -1309,21 +1369,27 @@ class _AddEditProductState extends State<AddEditProduct> {
               final result = await addProduct(true);
               if (result) {
                 final savedProduct = await ps.futureSingleProduct(
-                    userId: widget.uid!, productId: currentProduct?.id);
+                  userId: widget.uid!,
+                  productId: currentProduct?.id,
+                );
                 if (mounted && savedProduct.id != null) {
-                  GoRouter.of(context)
-                      .pushNamed('receipeViewProduct', pathParameters: {
-                    'uid': widget.uid!,
-                    'productId': currentProduct!.id!,
-                  });
+                  GoRouter.of(context).pushNamed(
+                    'receipeViewProduct',
+                    pathParameters: {
+                      'uid': widget.uid!,
+                      'productId': currentProduct!.id!,
+                    },
+                  );
                 }
               }
             } else if (mounted && widget.productId != null) {
-              GoRouter.of(context)
-                  .pushNamed('receipeViewProduct', pathParameters: {
-                'uid': widget.uid!,
-                'productId': widget.productId!,
-              });
+              GoRouter.of(context).pushNamed(
+                'receipeViewProduct',
+                pathParameters: {
+                  'uid': widget.uid!,
+                  'productId': widget.productId!,
+                },
+              );
             }
           },
           child: Container(
@@ -1449,8 +1515,9 @@ class _InventoryFieldState extends State<InventoryField> {
   @override
   void initState() {
     super.initState();
-    _controller =
-        TextEditingController(text: widget.initialValue?.toString() ?? '');
+    _controller = TextEditingController(
+      text: widget.initialValue?.toString() ?? '',
+    );
     _controller.addListener(_onChanged);
   }
 
@@ -1502,8 +1569,9 @@ class _InventoryFieldState extends State<InventoryField> {
             child: FlushTextField(
               controller: _controller,
               hintText: appLoc!.value,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
             ),
           ),
         ],

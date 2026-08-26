@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/debouncer.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/floating_button.dart';
@@ -192,55 +193,71 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
   // ── Filter bar — LOGIC UNCHANGED ──────────────────────────────────────────
 
   Widget _buildFilterOptions() {
-    return Padding(
-      padding: responsive!.responsivePaddingHorM,
-      child: SizedBox(
-        height: responsive!.scaleHeight(50),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            selectedRange != null
-                ? Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      MyText(
-                          text:
-                              '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}'),
-                      MyText(
-                          text:
-                              '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}'),
-                    ],
-                  )
-                : const SizedBox.shrink(),
-            const Spacer(),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: PeriodDropdown(
-                appLoc: appLoc!,
-                responsive: responsive!,
-                onPeriodChanged: onPeriodChanged,
-                selectedPeriod: period,
-              ),
+    // Align(topCenter), not Center — this sits inside a Stack, where
+    // Center expands to fill the whole Stack height (dictated by the much
+    // taller list below it) and re-centers vertically too, which is what
+    // pushed the filter row down into the middle of the page and behind
+    // the list's own layout box. topCenter keeps it pinned at the top,
+    // like before, just now width-capped and horizontally centered.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
+        ),
+        child: Padding(
+          padding: responsive!.responsivePaddingHorM,
+          child: SizedBox(
+            height: responsive!.scaleHeight(50),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                selectedRange != null
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          MyText(
+                            text:
+                                '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}',
+                          ),
+                          MyText(
+                            text:
+                                '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}',
+                          ),
+                        ],
+                      )
+                    : const SizedBox.shrink(),
+                const Spacer(),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: PeriodDropdown(
+                    appLoc: appLoc!,
+                    responsive: responsive!,
+                    onPeriodChanged: onPeriodChanged,
+                    selectedPeriod: period,
+                  ),
+                ),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: GestureDetector(
+                    onTap: () => _selectDateRange(context),
+                    child: const Icon(Icons.calendar_month),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      start = end = null;
+                      selectedRange = null;
+                    });
+                  },
+                  child: const Icon(Icons.clear_all),
+                ),
+              ],
             ),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: GestureDetector(
-                onTap: () => _selectDateRange(context),
-                child: const Icon(Icons.calendar_month),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  start = end = null;
-                  selectedRange = null;
-                });
-              },
-              child: const Icon(Icons.clear_all),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -253,21 +270,30 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
     filteredQuotes = isSearching && searchController.text.isNotEmpty
         ? _filterQuotes(currentQuotes, searchController.text)
         : currentQuotes;
-    return Column(
-      children: [
-        SizedBox(height: responsive!.screenHeight * 0.05),
-        SizedBox(
-          height: responsive!.screenHeight * 0.765,
-          child: filteredQuotes.isNotEmpty
-              ? _buildAnimatedQuoteList()
-              : Center(
-                  child: MyText(
-                    text: appLoc!.noQuotesFound,
-                    fontScale: responsive!.scaleFont(15),
-                  ),
-                ),
+    // Align(topCenter) for the same reason as _buildFilterOptions() above.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
         ),
-      ],
+        child: Column(
+          children: [
+            SizedBox(height: responsive!.screenHeight * 0.05),
+            SizedBox(
+              height: responsive!.screenHeight * 0.765,
+              child: filteredQuotes.isNotEmpty
+                  ? _buildAnimatedQuoteList()
+                  : Center(
+                      child: MyText(
+                        text: appLoc!.noQuotesFound,
+                        fontScale: responsive!.scaleFont(15),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -290,7 +316,8 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
       initialItemCount: filteredQuotes.length,
       itemBuilder: (context, index, animation) {
         var quoteValue = 0.0;
-        for (var product in (filteredQuotes[index].orderedProducts ?? {}).values) {
+        for (var product
+            in (filteredQuotes[index].orderedProducts ?? {}).values) {
           quoteValue += product.quantity! * product.price!;
         }
         quoteTotalValue = quoteTotalValue! + quoteValue;
@@ -334,16 +361,18 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
         onTap: () {
           if (currentQuotes[index].uid == null) return;
           quote.quoteToOrderId != null
-              ? GoRouter.of(context)
-                  .pushNamed('editQuoteOrder', pathParameters: {
-                  'uid': widget.uid!,
-                  'quoteId': quote.uid!,
-                  'quoteToOrderId': quote.quoteToOrderId!,
-                })
-              : GoRouter.of(context).pushNamed('editQuote', pathParameters: {
-                  'uid': widget.uid!,
-                  'quoteId': quote.uid!,
-                });
+              ? GoRouter.of(context).pushNamed(
+                  'editQuoteOrder',
+                  pathParameters: {
+                    'uid': widget.uid!,
+                    'quoteId': quote.uid!,
+                    'quoteToOrderId': quote.quoteToOrderId!,
+                  },
+                )
+              : GoRouter.of(context).pushNamed(
+                  'editQuote',
+                  pathParameters: {'uid': widget.uid!, 'quoteId': quote.uid!},
+                );
         },
         child: Dismissible(
           key: uniqueKey,
@@ -352,12 +381,14 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
             alignment: Alignment.centerRight,
             padding: responsive!.responsivePaddingRight,
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.error.withValues(alpha: 0.12),
+              color: Theme.of(
+                context,
+              ).colorScheme.error.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color:
-                    Theme.of(context).colorScheme.error.withValues(alpha: 0.4),
+                color: Theme.of(
+                  context,
+                ).colorScheme.error.withValues(alpha: 0.4),
                 width: 0.5,
               ),
             ),
@@ -371,8 +402,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
           confirmDismiss: (direction) async =>
               dd.showDeletionDialog(context, appLoc!),
           onDismissed: (direction) {
-            final currentIndex = filteredQuotes
-                .indexWhere((o) => o.uid == filteredQuotes[index].uid);
+            final currentIndex = filteredQuotes.indexWhere(
+              (o) => o.uid == filteredQuotes[index].uid,
+            );
             if (currentIndex != -1) _removeQuote(index);
           },
           child: Container(
@@ -384,10 +416,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
               border: Border.all(
                 color: isCancelled
                     ? Colors.grey.shade400
-                    : Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.25),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.25),
                 width: 0.8,
               ),
             ),
@@ -457,9 +488,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
                                   text:
                                       '${(quote.orderedProducts ?? {}).length} ${appLoc!.product}',
                                   fontScale: responsive!.scaleFont(11),
-                                  fontColor: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  fontColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                                 const Spacer(),
                                 _checkQuoteState(currentQuotes[index]),
@@ -469,9 +500,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
                                     text:
                                         '${quote.orderedAt!.day}/${quote.orderedAt!.month}/${quote.orderedAt!.year}',
                                     fontScale: responsive!.scaleFont(11),
-                                    fontColor: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    fontColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                               ],
                             ),
@@ -491,7 +522,8 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
                         alignment: Alignment.center,
                         child: Container(
                           decoration: BoxDecoration(
-                              border: Border.all(color: Colors.red)),
+                            border: Border.all(color: Colors.red),
+                          ),
                           child: Padding(
                             padding: responsive!.responsivePaddingES,
                             child: MyText(
@@ -525,7 +557,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
         height: h,
         width: w,
         decoration: BoxDecoration(
-            color: Colors.blueAccent, borderRadius: BorderRadius.circular(20)),
+          color: Colors.blueAccent,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Center(
           child: MyText(
             text: appLoc!.ordered,
@@ -542,8 +576,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
         height: h,
         width: w,
         decoration: BoxDecoration(
-            color: Colors.green.shade600,
-            borderRadius: BorderRadius.circular(20)),
+          color: Colors.green.shade600,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Center(
           child: MyText(
             text: appLoc!.quoted,
@@ -559,8 +594,9 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
       height: h,
       width: w,
       decoration: BoxDecoration(
-          color: Colors.amber.shade600,
-          borderRadius: BorderRadius.circular(20)),
+        color: Colors.amber.shade600,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Center(
         child: MyText(
           text: appLoc!.draft,
@@ -666,18 +702,15 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
     if (isPreparingAnimations) return;
     isPreparingAnimations = true;
     _itemAnimations.clear();
-    _itemAnimations = List.generate(
-      filteredQuotes.length,
-      (index) {
-        final beginValue = (0.1 * index).clamp(0.0, 1.0);
-        return Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: _listAnimationController,
-            curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-      },
-    );
+    _itemAnimations = List.generate(filteredQuotes.length, (index) {
+      final beginValue = (0.1 * index).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(
+          parent: _listAnimationController,
+          curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
+        ),
+      );
+    });
     if (mounted) {
       _listAnimationController.reset();
       _animationDebouncer.run(() {
@@ -743,8 +776,10 @@ class _QuoteViewState extends State<QuoteView> with TickerProviderStateMixin {
   }
 
   Future<void> onPeriodChanged(String selectedPeriod) async {
-    final range =
-        DateRangeHelper.getDateRangeFromString(selectedPeriod, appLoc);
+    final range = DateRangeHelper.getDateRangeFromString(
+      selectedPeriod,
+      appLoc,
+    );
     setState(() {
       period = selectedPeriod;
       selectedRange = DateTimeRange(

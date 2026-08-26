@@ -4,6 +4,7 @@ import 'package:business_manager_web_ui/src/app/animations/linear_animation.dart
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/url_launcher_func.dart';
@@ -135,8 +136,11 @@ class _OrderAddEditState extends State<OrderAddEdit> {
   }
 
   // Read-only info row — used when enabled=false
-  Widget _readOnlyRow(
-      {required IconData icon, required String label, required String value}) {
+  Widget _readOnlyRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
@@ -148,9 +152,11 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       ),
       child: Row(
         children: [
-          Icon(icon,
-              size: responsive!.scaleHeight(18),
-              color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(
+            icon,
+            size: responsive!.scaleHeight(18),
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           SizedBox(width: responsive!.scaleWidth(12)),
           Expanded(
             child: MyText(
@@ -205,37 +211,42 @@ class _OrderAddEditState extends State<OrderAddEdit> {
             body: Stack(
               children: [
                 FutureBuilder<UserDetails>(
-                    future: getCurrentUser,
-                    builder: (context, usershot) {
-                      if (usershot.hasError) {
-                        return Center(
-                          child: MyText(
-                              text: errorClass.userNoTFoundError(
-                                  e: usershot.error.toString())),
-                        );
-                      } else if (usershot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const GradientSkeleton();
-                      } else if (usershot.hasData) {
-                        currentUser = usershot.data;
-                        if (currentUser != null &&
-                            currentUser!.isSubscribed != null &&
-                            currentUser!.isSubscribed! &&
-                            currentUser?.useInventory != null &&
-                            currentUser!.useInventory!) {
-                          useInventory = true;
-                        }
+                  future: getCurrentUser,
+                  builder: (context, usershot) {
+                    if (usershot.hasError) {
+                      return Center(
+                        child: MyText(
+                          text: errorClass.userNoTFoundError(
+                            e: usershot.error.toString(),
+                          ),
+                        ),
+                      );
+                    } else if (usershot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const GradientSkeleton();
+                    } else if (usershot.hasData) {
+                      currentUser = usershot.data;
+                      if (currentUser != null &&
+                          currentUser!.isSubscribed != null &&
+                          currentUser!.isSubscribed! &&
+                          currentUser?.useInventory != null &&
+                          currentUser!.useInventory!) {
+                        useInventory = true;
                       }
-                      return _buildOrderViewBody();
-                    }),
+                    }
+                    return _buildOrderViewBody();
+                  },
+                ),
                 if (isLoading)
                   StreamBuilder<double>(
-                      stream: Stream.periodic(const Duration(milliseconds: 100),
-                          (_) => ProgressManager.progress),
-                      builder: (context, progressshot) {
-                        double progress = progressshot.data ?? 0.0;
-                        return Center(
-                            child: AnimatedArcLoader(
+                    stream: Stream.periodic(
+                      const Duration(milliseconds: 100),
+                      (_) => ProgressManager.progress,
+                    ),
+                    builder: (context, progressshot) {
+                      double progress = progressshot.data ?? 0.0;
+                      return Center(
+                        child: AnimatedArcLoader(
                           progress: progress,
                           size: 150,
                           fontSize: responsive!.scaleFont(15),
@@ -247,8 +258,10 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                             snackbarWidget.content = appLoc!.operationTimedOut;
                             snackbarWidget.showSnack();
                           },
-                        ));
-                      }),
+                        ),
+                      );
+                    },
+                  ),
               ],
             ),
             bottomSheet: bottomSheet(),
@@ -262,95 +275,104 @@ class _OrderAddEditState extends State<OrderAddEdit> {
 
   Widget _buildOrderViewBody() {
     return FutureBuilder(
-        future: widget.orderId != null ? getCurrentOrder : getLastOrder,
-        builder: (context, ordershot) {
-          if (ordershot.hasError) {
-            return Center(child: MyText(text: errorClass.ordersNotLoading()));
-          } else if (ordershot.connectionState == ConnectionState.waiting) {
-            return const GradientSkeleton();
-          } else {
-            if (ordershot.hasData && !isUpdating) isUpdating = true;
-            if (ordershot.hasData && ordershot.data!.invoiceUrl != null) {
-              enabled = false;
-            }
+      future: widget.orderId != null ? getCurrentOrder : getLastOrder,
+      builder: (context, ordershot) {
+        if (ordershot.hasError) {
+          return Center(child: MyText(text: errorClass.ordersNotLoading()));
+        } else if (ordershot.connectionState == ConnectionState.waiting) {
+          return const GradientSkeleton();
+        } else {
+          if (ordershot.hasData && !isUpdating) isUpdating = true;
+          if (ordershot.hasData && ordershot.data!.invoiceUrl != null) {
+            enabled = false;
+          }
 
-            return SingleChildScrollView(
-              padding: EdgeInsets.only(
-                left: responsive!.scaleWidth(16),
-                right: responsive!.scaleWidth(16),
-                top: responsive!.scaleHeight(12),
-                bottom: responsive!.scaleHeight(70),
-              ),
-              child: Stack(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // ── Order ID bar ────────────────────────────────
-                      if (ordershot.data != null)
-                        _buildOrderIdBar(ordershot.data!),
+          return SingleChildScrollView(
+            padding: EdgeInsets.only(
+              left: responsive!.scaleWidth(16),
+              right: responsive!.scaleWidth(16),
+              top: responsive!.scaleHeight(12),
+              bottom: responsive!.scaleHeight(70),
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.maxGridContentWidth,
+                ),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Order ID bar ────────────────────────────
+                        if (ordershot.data != null)
+                          _buildOrderIdBar(ordershot.data!),
 
-                      // ── Client ──────────────────────────────────────
-                      _sectionLabel(appLoc!.clientName),
-                      clientNameTypeIn(),
+                        // ── Client ────────────────────────────────────
+                        _sectionLabel(appLoc!.clientName),
+                        clientNameTypeIn(),
 
-                      SizedBox(height: responsive!.scaleHeight(20)),
-
-                      // ── Payment terms ────────────────────────────────
-                      _sectionLabel(appLoc!.paymentTerms),
-                      paymentTermsWidget(),
-
-                      SizedBox(height: responsive!.scaleHeight(20)),
-
-                      // ── Inventory location (conditional) ─────────────
-                      if (useInventory) ...[
-                        _sectionLabel(appLoc!.selectLocation),
-                        showInventoryOption(),
                         SizedBox(height: responsive!.scaleHeight(20)),
+
+                        // ── Payment terms ────────────────────────────
+                        _sectionLabel(appLoc!.paymentTerms),
+                        paymentTermsWidget(),
+
+                        SizedBox(height: responsive!.scaleHeight(20)),
+
+                        // ── Inventory location (conditional) ─────────
+                        if (useInventory) ...[
+                          _sectionLabel(appLoc!.selectLocation),
+                          showInventoryOption(),
+                          SizedBox(height: responsive!.scaleHeight(20)),
+                        ],
+
+                        // ── Products ──────────────────────────────────
+                        _sectionLabel(appLoc!.product),
+                        productDetails(),
                       ],
+                    ),
 
-                      // ── Products ─────────────────────────────────────
-                      _sectionLabel(appLoc!.product),
-                      productDetails(),
-                    ],
-                  ),
-
-                  // Cancelled overlay — unchanged
-                  if (widget.orderId != null && order.status == 'canceled')
-                    Positioned(
-                      top: responsive!.scaleHeight(50),
-                      left: responsive!.scaleWidth(50),
-                      child: Transform(
-                        transform: Matrix4.rotationZ(-25 * (pi / 180)),
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: responsive!.scaleWidth(160),
-                          height: responsive!.scaleHeight(70),
-                          decoration: BoxDecoration(
+                    // Cancelled overlay — unchanged
+                    if (widget.orderId != null && order.status == 'canceled')
+                      Positioned(
+                        top: responsive!.scaleHeight(50),
+                        left: responsive!.scaleWidth(50),
+                        child: Transform(
+                          transform: Matrix4.rotationZ(-25 * (pi / 180)),
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: responsive!.scaleWidth(160),
+                            height: responsive!.scaleHeight(70),
+                            decoration: BoxDecoration(
                               color: Colors.red.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(5),
-                              border: Border.all(color: Colors.red, width: 2)),
-                          child: Center(
-                            child: MyText(
-                              text: order.status == 'canceled'
-                                  ? appLoc!.cancelled.toUpperCase()
-                                  : '',
-                              fontColor: Colors.red,
-                              fontWeight: FontWeight.bold,
-                              fontScale: responsive!.scaleFont(40),
+                              border: Border.all(color: Colors.red, width: 2),
+                            ),
+                            child: Center(
+                              child: MyText(
+                                text: order.status == 'canceled'
+                                    ? appLoc!.cancelled.toUpperCase()
+                                    : '',
+                                fontColor: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontScale: responsive!.scaleFont(40),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
 
-                  if (ordershot.data?.status == constStrings.cancel)
-                    Center(child: _buildCancelledWidget()),
-                ],
+                    if (ordershot.data?.status == constStrings.cancel)
+                      Center(child: _buildCancelledWidget()),
+                  ],
+                ),
               ),
-            );
-          }
-        });
+            ),
+          );
+        }
+      },
+    );
   }
 
   // ── Order ID bar ───────────────────────────────────────────────────────────
@@ -384,10 +406,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.1),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: MyText(
@@ -407,8 +428,10 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                 downloadandLaunch();
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF3DE),
                   borderRadius: BorderRadius.circular(20),
@@ -420,9 +443,11 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.download_outlined,
-                        size: responsive!.scaleHeight(13),
-                        color: const Color(0xFF27500A)),
+                    Icon(
+                      Icons.download_outlined,
+                      size: responsive!.scaleHeight(13),
+                      color: const Color(0xFF27500A),
+                    ),
                     SizedBox(width: responsive!.scaleWidth(4)),
                     MyText(
                       text: appLoc!.invoiced,
@@ -445,95 +470,106 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     return enabled
         ? _cardWrap(
             StreamBuilder<List<ClientDetails>>(
-                stream: cs.streamAllClients(widget.uid!),
-                builder: (context, clientshot) {
-                  if (clientshot.hasData) allClients = clientshot.data!;
-                  return Padding(
-                    padding: responsive!.responsivePaddingES,
-                    child: TypeAheadField<ClientDetails>(
-                      autoFlipDirection: true,
-                      controller: clientNameController,
-                      emptyBuilder: (context) {
-                        return Padding(
-                          padding: responsive!.responsivePaddingM,
-                          child: Row(
-                            children: [
-                              MyText(text: appLoc!.noClientsFound),
-                              const Spacer(),
-                              GestureDetector(
-                                onTap: () => GoRouter.of(context).pushNamed(
-                                    'addClient',
-                                    pathParameters: {'uid': widget.uid!}),
-                                child: Icon(Icons.add_circle,
-                                    size: responsive!.scaleHeight(25)),
-                              )
-                            ],
-                          ),
-                        );
-                      },
-                      decorationBuilder: (context, child) => Material(
-                        color: Theme.of(context).colorScheme.secondary,
-                        type: MaterialType.card,
-                        elevation: 4,
-                        borderRadius: BorderRadius.circular(5),
-                        child: child,
-                      ),
-                      builder: (context, controller, focusNode) {
-                        if (widget.clientId != null) {
-                          order.clientId = widget.clientId;
-                          return clientInfo(controller, focusNode);
-                        }
-                        return TextField(
-                          controller: controller,
-                          focusNode: focusNode,
-                          style: TextStyle(fontSize: responsive!.scaleFont(15)),
-                          decoration: InputDecoration(
-                            border: InputBorder.none,
-                            hintText: appLoc!.clientName,
-                            suffixIcon: controller.text.isNotEmpty
-                                ? GestureDetector(
-                                    onTap: () =>
-                                        setState(() => controller.clear()),
-                                    child: Icon(Icons.clear,
-                                        size: responsive!.screenHeight * 0.025))
-                                : const SizedBox.shrink(),
-                          ),
-                        );
-                      },
-                      itemBuilder: (context, value) {
-                        return ListTile(
-                          title: MyText(
-                            text:
-                                '${value.individual! ? '${value.firstName} ${value.lastName}' : value.companyName != null && value.companyName!.length > 35 ? '${value.companyName!.substring(0, 35)}...' : value.companyName}',
-                            fontScale: responsive!.scaleFont(15),
-                          ),
-                          subtitle: MyText(
-                            text:
-                                '(${value.phoneNumber!['code']}) ${value.phoneNumber!['number']} - ${value.email}',
-                            fontScale: responsive!.scaleFont(12),
-                          ),
-                        );
-                      },
-                      onSelected: (ClientDetails? value) {
-                        if (value != null && value.uid != null) {
-                          selectedClient = value;
-                          clientNameController.text =
-                              '${value.individual! ? '${value.firstName} ${value.lastName}' : value.companyName}';
-                          order.clientId = value.uid;
-                          order.clientName = value.individual!
-                              ? '${value.firstName} ${value.lastName}'
-                              : value.companyName;
-                        } else {
-                          selectedClient = null;
-                          clientNameController.clear();
-                          order.clientId = null;
-                          order.clientName = null;
-                        }
-                      },
-                      suggestionsCallback: getClientSuggestions,
+              stream: cs.streamAllClients(widget.uid!),
+              builder: (context, clientshot) {
+                if (clientshot.hasData) allClients = clientshot.data!;
+                return Padding(
+                  padding: responsive!.responsivePaddingES,
+                  child: TypeAheadField<ClientDetails>(
+                    autoFlipDirection: true,
+                    controller: clientNameController,
+                    emptyBuilder: (context) {
+                      return Padding(
+                        padding: responsive!.responsivePaddingM,
+                        child: Row(
+                          children: [
+                            MyText(text: appLoc!.noClientsFound),
+                            const Spacer(),
+                            GestureDetector(
+                              onTap: () => GoRouter.of(context).pushNamed(
+                                'addClient',
+                                pathParameters: {'uid': widget.uid!},
+                              ),
+                              child: Icon(
+                                Icons.add_circle,
+                                size: responsive!.scaleHeight(25),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    decorationBuilder: (context, child) => Material(
+                      color: Theme.of(context).colorScheme.secondary,
+                      type: MaterialType.card,
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(5),
+                      child: child,
                     ),
-                  );
-                }),
+                    builder: (context, controller, focusNode) {
+                      if (widget.clientId != null) {
+                        order.clientId = widget.clientId;
+                        return clientInfo(controller, focusNode);
+                      }
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        style: TextStyle(fontSize: responsive!.scaleFont(15)),
+                        decoration: InputDecoration(
+                          border: InputBorder.none,
+                          hintText: appLoc!.clientName,
+                          suffixIcon: controller.text.isNotEmpty
+                              ? GestureDetector(
+                                  onTap: () =>
+                                      setState(() => controller.clear()),
+                                  child: Icon(
+                                    Icons.clear,
+                                    size: responsive!.screenHeight * 0.025,
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      );
+                    },
+                    itemBuilder: (context, value) {
+                      return ListTile(
+                        title: MyText(
+                          text:
+                              '${value.individual!
+                                  ? '${value.firstName} ${value.lastName}'
+                                  : value.companyName != null && value.companyName!.length > 35
+                                  ? '${value.companyName!.substring(0, 35)}...'
+                                  : value.companyName}',
+                          fontScale: responsive!.scaleFont(15),
+                        ),
+                        subtitle: MyText(
+                          text:
+                              '(${value.phoneNumber!['code']}) ${value.phoneNumber!['number']} - ${value.email}',
+                          fontScale: responsive!.scaleFont(12),
+                        ),
+                      );
+                    },
+                    onSelected: (ClientDetails? value) {
+                      if (value != null && value.uid != null) {
+                        selectedClient = value;
+                        clientNameController.text =
+                            '${value.individual! ? '${value.firstName} ${value.lastName}' : value.companyName}';
+                        order.clientId = value.uid;
+                        order.clientName = value.individual!
+                            ? '${value.firstName} ${value.lastName}'
+                            : value.companyName;
+                      } else {
+                        selectedClient = null;
+                        clientNameController.clear();
+                        order.clientId = null;
+                        order.clientName = null;
+                      }
+                    },
+                    suggestionsCallback: getClientSuggestions,
+                  ),
+                );
+              },
+            ),
           )
         : _readOnlyRow(
             icon: Icons.person_outline_rounded,
@@ -607,7 +643,8 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                 initialValue: order.storeLocation,
                 hint: Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: responsive!.scaleWidth(10)),
+                    horizontal: responsive!.scaleWidth(10),
+                  ),
                   child: MyText(
                     text: appLoc!.selectLocation,
                     fontScale: responsive!.scaleFont(13),
@@ -628,25 +665,26 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                 dropdownColor: Theme.of(context).scaffoldBackgroundColor,
                 items: currentUser?.inventoryLoc?.entries
                     .map<DropdownMenuItem<String>>((data) {
-                  return DropdownMenuItem<String>(
-                    value: data.value,
-                    child: MyText(
-                      text: data.value,
-                      fontScale: responsive!.scaleFont(13),
-                    ),
-                  );
-                }).toList(),
+                      return DropdownMenuItem<String>(
+                        value: data.value,
+                        child: MyText(
+                          text: data.value,
+                          fontScale: responsive!.scaleFont(13),
+                        ),
+                      );
+                    })
+                    .toList(),
                 onChanged:
                     selectedProduct != null && selectedProduct!.isNotEmpty
-                        ? null
-                        : (String? value) {
-                            if (value != null) {
-                              setState(() {
-                                order.storeLocation = value;
-                                inventoryLocation = value;
-                              });
-                            }
-                          },
+                    ? null
+                    : (String? value) {
+                        if (value != null) {
+                          setState(() {
+                            order.storeLocation = value;
+                            inventoryLocation = value;
+                          });
+                        }
+                      },
               ),
             ),
           )
@@ -670,17 +708,17 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                 // Added products
                 if (selectedProduct != null && selectedProduct!.isNotEmpty)
                   Container(
-                    margin:
-                        EdgeInsets.only(bottom: responsive!.scaleHeight(12)),
+                    margin: EdgeInsets.only(
+                      bottom: responsive!.scaleHeight(12),
+                    ),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surface
-                          .withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.surface.withValues(alpha: 0.3),
                       border: Border.all(
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.3),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.3),
                         width: 0.5,
                       ),
                       borderRadius: BorderRadius.circular(12),
@@ -693,9 +731,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                         height: 0,
                         thickness: 0.5,
                         indent: responsive!.scaleWidth(14),
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.25),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.25),
                       ),
                       itemBuilder: (context, index) {
                         var p = selectedProduct!.entries.elementAt(index).value;
@@ -719,7 +757,8 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                                       fontScale: responsive!.scaleFont(13),
                                     ),
                                     SizedBox(
-                                        height: responsive!.scaleHeight(2)),
+                                      height: responsive!.scaleHeight(2),
+                                    ),
                                     MyText(
                                       text:
                                           '${p.packing ?? ''}  ·  ${currentUser?.currency?['symbol'] ?? ''}${number.format(p.price)}',
@@ -750,7 +789,8 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                                       (OrderProducts product) {
                                         setState(() {
                                           selectedProduct![selectedProduct!.keys
-                                              .elementAt(index)] = product;
+                                                  .elementAt(index)] =
+                                              product;
                                         });
                                       },
                                       currentUser!,
@@ -761,23 +801,23 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                                     width: responsive!.scaleWidth(32),
                                     height: responsive!.scaleHeight(32),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .surfaceContainerHighest,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surfaceContainerHighest,
                                       borderRadius: BorderRadius.circular(8),
                                       border: Border.all(
-                                        color: Theme.of(context)
-                                            .dividerColor
-                                            .withValues(alpha: 0.3),
+                                        color: Theme.of(
+                                          context,
+                                        ).dividerColor.withValues(alpha: 0.3),
                                         width: 0.5,
                                       ),
                                     ),
                                     child: Icon(
                                       Icons.tune_outlined,
                                       size: responsive!.scaleHeight(15),
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
                                 ),
@@ -786,26 +826,25 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      selectedProduct!.remove(selectedProduct!
-                                          .keys
-                                          .elementAt(index));
+                                      selectedProduct!.remove(
+                                        selectedProduct!.keys.elementAt(index),
+                                      );
                                     });
                                   },
                                   child: Container(
                                     width: responsive!.scaleWidth(32),
                                     height: responsive!.scaleHeight(32),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .error
+                                      color: Theme.of(context).colorScheme.error
                                           .withValues(alpha: 0.08),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Icon(
                                       Icons.delete_outline_rounded,
                                       size: responsive!.scaleHeight(15),
-                                      color:
-                                          Theme.of(context).colorScheme.error,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.error,
                                     ),
                                   ),
                                 ),
@@ -822,80 +861,84 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                   Padding(
                     padding: responsive!.responsivePaddingBottom,
                     child: StreamBuilder<List<Product>>(
-                        stream: ps.getAllUserProducts(widget.uid!),
-                        builder: (context, productshot) {
-                          if (productshot.hasData) {
-                            allProducts = productshot.data!;
-                          }
-                          return TypeAheadField<Product>(
-                            autoFlipDirection: true,
-                            controller: productNameController,
-                            emptyBuilder: (context) {
-                              return Padding(
-                                padding: responsive!.responsivePaddingM,
-                                child: Row(
-                                  children: [
-                                    MyText(text: appLoc!.noProductFound),
-                                    const Spacer(),
-                                    GestureDetector(
-                                      onTap: () => GoRouter.of(context)
-                                          .pushNamed('addProduct',
-                                              pathParameters: {
-                                            'uid': widget.uid!
-                                          }),
-                                      child: Icon(Icons.add_circle,
-                                          size: responsive!.scaleHeight(25)),
-                                    )
-                                  ],
+                      stream: ps.getAllUserProducts(widget.uid!),
+                      builder: (context, productshot) {
+                        if (productshot.hasData) {
+                          allProducts = productshot.data!;
+                        }
+                        return TypeAheadField<Product>(
+                          autoFlipDirection: true,
+                          controller: productNameController,
+                          emptyBuilder: (context) {
+                            return Padding(
+                              padding: responsive!.responsivePaddingM,
+                              child: Row(
+                                children: [
+                                  MyText(text: appLoc!.noProductFound),
+                                  const Spacer(),
+                                  GestureDetector(
+                                    onTap: () => GoRouter.of(context).pushNamed(
+                                      'addProduct',
+                                      pathParameters: {'uid': widget.uid!},
+                                    ),
+                                    child: Icon(
+                                      Icons.add_circle,
+                                      size: responsive!.scaleHeight(25),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          decorationBuilder: (context, child) => Material(
+                            color: Theme.of(context).scaffoldBackgroundColor,
+                            type: MaterialType.card,
+                            elevation: 4,
+                            borderRadius: BorderRadius.circular(5),
+                            child: child,
+                          ),
+                          builder: (context, controller, focusNode) {
+                            return MyTextField(
+                              controller: controller,
+                              focusNode: focusNode,
+                              hintText: appLoc!.productName,
+                              capitalize: TextCapitalization.words,
+                              fontSize: responsive!.scaleFont(15),
+                            );
+                          },
+                          itemBuilder: (context, value) {
+                            bool added =
+                                selectedProduct != null &&
+                                selectedProduct!.isNotEmpty &&
+                                selectedProduct!.containsKey(value.id);
+                            return ListTile(
+                              tileColor: added
+                                  ? Theme.of(context).colorScheme.outline
+                                  : Theme.of(context).scaffoldBackgroundColor,
+                              title: MyText(
+                                text: value.name,
+                                fontScale: responsive!.scaleFont(15),
+                              ),
+                              subtitle: MyText(
+                                text:
+                                    '${value.packingValue} ${value.packingUnit} - ${currentUser?.currency!['symbol']}${value.price}',
+                                fontScale: responsive!.scaleFont(12),
+                              ),
+                              trailing: IconButton(
+                                onPressed: () => _addProductToSelection(value),
+                                icon: Icon(
+                                  Icons.add_circle,
+                                  size: responsive!.scaleHeight(25),
                                 ),
-                              );
-                            },
-                            decorationBuilder: (context, child) => Material(
-                              color: Theme.of(context).scaffoldBackgroundColor,
-                              type: MaterialType.card,
-                              elevation: 4,
-                              borderRadius: BorderRadius.circular(5),
-                              child: child,
-                            ),
-                            builder: (context, controller, focusNode) {
-                              return MyTextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                hintText: appLoc!.productName,
-                                capitalize: TextCapitalization.words,
-                                fontSize: responsive!.scaleFont(15),
-                              );
-                            },
-                            itemBuilder: (context, value) {
-                              bool added = selectedProduct != null &&
-                                  selectedProduct!.isNotEmpty &&
-                                  selectedProduct!.containsKey(value.id);
-                              return ListTile(
-                                tileColor: added
-                                    ? Theme.of(context).colorScheme.outline
-                                    : Theme.of(context).scaffoldBackgroundColor,
-                                title: MyText(
-                                  text: value.name,
-                                  fontScale: responsive!.scaleFont(15),
-                                ),
-                                subtitle: MyText(
-                                  text:
-                                      '${value.packingValue} ${value.packingUnit} - ${currentUser?.currency!['symbol']}${value.price}',
-                                  fontScale: responsive!.scaleFont(12),
-                                ),
-                                trailing: IconButton(
-                                  onPressed: () =>
-                                      _addProductToSelection(value),
-                                  icon: Icon(Icons.add_circle,
-                                      size: responsive!.scaleHeight(25)),
-                                ),
-                              );
-                            },
-                            onSelected: (Product? value) =>
-                                _addProductToSelection(value!),
-                            suggestionsCallback: getProductSuggestions,
-                          );
-                        }),
+                              ),
+                            );
+                          },
+                          onSelected: (Product? value) =>
+                              _addProductToSelection(value!),
+                          suggestionsCallback: getProductSuggestions,
+                        );
+                      },
+                    ),
                   ),
               ],
             ),
@@ -908,7 +951,7 @@ class _OrderAddEditState extends State<OrderAddEdit> {
                   showPercentage: true,
                   timeoutDuration: const Duration(seconds: 10),
                 ),
-              )
+              ),
           ],
         ),
       ),
@@ -925,40 +968,41 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     }
     _valueNotifier.value = orderTotalValue!;
     return ValueListenableBuilder<double>(
-        valueListenable: _valueNotifier,
-        builder: (context, value, child) {
-          return Container(
-            height: responsive!.scaleHeight(56),
-            decoration: BoxDecoration(
-              border: Border(
-                top: BorderSide(
-                  color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-                  width: 0.5,
+      valueListenable: _valueNotifier,
+      builder: (context, value, child) {
+        return Container(
+          height: responsive!.scaleHeight(56),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                width: 0.5,
+              ),
+            ),
+            color: Theme.of(context).scaffoldBackgroundColor,
+          ),
+          child: Padding(
+            padding: responsive!.responsivePaddingHor,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                MyText(
+                  text: appLoc!.totalValue,
+                  fontScale: responsive!.scaleFont(14),
                 ),
-              ),
-              color: Theme.of(context).scaffoldBackgroundColor,
+                const Spacer(),
+                MyText(
+                  text:
+                      '${currentUser?.currency != null ? currentUser?.currency!['symbol'] : ''}${number.format(value)}',
+                  fontScale: responsive!.scaleFont(18),
+                  fontWeight: FontWeight.w500,
+                ),
+              ],
             ),
-            child: Padding(
-              padding: responsive!.responsivePaddingHor,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  MyText(
-                    text: appLoc!.totalValue,
-                    fontScale: responsive!.scaleFont(14),
-                  ),
-                  const Spacer(),
-                  MyText(
-                    text:
-                        '${currentUser?.currency != null ? currentUser?.currency!['symbol'] : ''}${number.format(value)}',
-                    fontScale: responsive!.scaleFont(18),
-                    fontWeight: FontWeight.w500,
-                  )
-                ],
-              ),
-            ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 
   // ── _buildCancelledWidget — RegulartButton kept, restyled ─────────────────
@@ -993,7 +1037,7 @@ class _OrderAddEditState extends State<OrderAddEdit> {
             textColor: Theme.of(context).colorScheme.secondary,
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
-        )
+        ),
       ],
     );
   }
@@ -1002,46 +1046,51 @@ class _OrderAddEditState extends State<OrderAddEdit> {
 
   Widget clientInfo(TextEditingController controller, FocusNode focusNode) {
     return FutureBuilder(
-        future: getCurrentClient,
-        builder: (context, clientshot) {
-          if (clientshot.hasError) {
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              style: TextStyle(fontSize: responsive!.scaleFont(15)),
-              decoration: InputDecoration(
-                border: InputBorder.none,
-                hintText: appLoc!.supplierName,
-                suffixIcon: controller.text.isNotEmpty
-                    ? GestureDetector(
-                        onTap: () => setState(() => controller.clear()),
-                        child: Icon(Icons.clear,
-                            size: responsive!.screenHeight * 0.025))
-                    : const SizedBox.shrink(),
-              ),
-            );
-          } else if (clientshot.connectionState == ConnectionState.waiting) {
-            return const GradientSkeleton();
-          } else {
-            controller = TextEditingController(
-                text: clientshot.data?.individual == true
-                    ? '${clientshot.data?.firstName} ${clientshot.data?.lastName}'
-                    : clientshot.data?.companyName != null &&
-                            clientshot.data!.companyName!.length > 35
-                        ? '${clientshot.data?.companyName!.substring(0, 35)}...'
-                        : clientshot.data?.companyName!);
-            return TextField(
-              controller: controller,
-              focusNode: focusNode,
-              style: TextStyle(fontSize: responsive!.scaleFont(15)),
-              decoration: InputDecoration(
-                enabled: false,
-                border: InputBorder.none,
-                hintText: appLoc!.supplierName,
-              ),
-            );
-          }
-        });
+      future: getCurrentClient,
+      builder: (context, clientshot) {
+        if (clientshot.hasError) {
+          return TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: TextStyle(fontSize: responsive!.scaleFont(15)),
+            decoration: InputDecoration(
+              border: InputBorder.none,
+              hintText: appLoc!.supplierName,
+              suffixIcon: controller.text.isNotEmpty
+                  ? GestureDetector(
+                      onTap: () => setState(() => controller.clear()),
+                      child: Icon(
+                        Icons.clear,
+                        size: responsive!.screenHeight * 0.025,
+                      ),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          );
+        } else if (clientshot.connectionState == ConnectionState.waiting) {
+          return const GradientSkeleton();
+        } else {
+          controller = TextEditingController(
+            text: clientshot.data?.individual == true
+                ? '${clientshot.data?.firstName} ${clientshot.data?.lastName}'
+                : clientshot.data?.companyName != null &&
+                      clientshot.data!.companyName!.length > 35
+                ? '${clientshot.data?.companyName!.substring(0, 35)}...'
+                : clientshot.data?.companyName!,
+          );
+          return TextField(
+            controller: controller,
+            focusNode: focusNode,
+            style: TextStyle(fontSize: responsive!.scaleFont(15)),
+            decoration: InputDecoration(
+              enabled: false,
+              border: InputBorder.none,
+              hintText: appLoc!.supplierName,
+            ),
+          );
+        }
+      },
+    );
   }
 
   // ── All logic methods — byte-for-byte unchanged ────────────────────────────
@@ -1131,8 +1180,10 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       ProgressManager.completeLoading();
       if (mounted) {
         setState(() => isLoading = false);
-        GoRouter.of(context).pushNamed('orderTerms',
-            pathParameters: {'uid': widget.uid!, 'orderId': newOrder.uid!});
+        GoRouter.of(context).pushNamed(
+          'orderTerms',
+          pathParameters: {'uid': widget.uid!, 'orderId': newOrder.uid!},
+        );
       }
     } on Exception catch (e) {
       ProgressManager.stopLoading();
@@ -1177,30 +1228,33 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     );
     try {
       Orders newOrder = Orders(
-          uid: widget.orderId,
-          clientId: order.clientId,
-          clientName: order.clientName,
-          paymentTerms: order.paymentTerms,
-          orderedProducts: selectedProduct!,
-          orderedAt: order.orderedAt,
-          scheduledAt: order.scheduledAt,
-          scheduledDate: order.scheduledDate,
-          scheduled: order.scheduled,
-          deliveryTerms: order.deliveryTerms,
-          deliveryFees: order.deliveryFees,
-          returnTerms: order.returnTerms,
-          invoiceUrl: order.invoiceUrl,
-          storeLocation: order.storeLocation,
-          setReminder: order.setReminder,
-          paymentReminderDate: order.paymentReminderDate,
-          setPaymentReminder: order.setPaymentReminder,
-          taxAmount: order.taxAmount);
+        uid: widget.orderId,
+        clientId: order.clientId,
+        clientName: order.clientName,
+        paymentTerms: order.paymentTerms,
+        orderedProducts: selectedProduct!,
+        orderedAt: order.orderedAt,
+        scheduledAt: order.scheduledAt,
+        scheduledDate: order.scheduledDate,
+        scheduled: order.scheduled,
+        deliveryTerms: order.deliveryTerms,
+        deliveryFees: order.deliveryFees,
+        returnTerms: order.returnTerms,
+        invoiceUrl: order.invoiceUrl,
+        storeLocation: order.storeLocation,
+        setReminder: order.setReminder,
+        paymentReminderDate: order.paymentReminderDate,
+        setPaymentReminder: order.setPaymentReminder,
+        taxAmount: order.taxAmount,
+      );
       await os.editOrder(uid: widget.uid, order: newOrder);
       ProgressManager.completeLoading();
       if (mounted) {
         setState(() => isLoading = false);
-        GoRouter.of(context).pushNamed('orderTerms',
-            pathParameters: {'uid': widget.uid!, 'orderId': newOrder.uid!});
+        GoRouter.of(context).pushNamed(
+          'orderTerms',
+          pathParameters: {'uid': widget.uid!, 'orderId': newOrder.uid!},
+        );
       }
     } on Exception catch (e) {
       ProgressManager.stopLoading();
@@ -1228,16 +1282,18 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     }
     matches.clear();
     for (var client in allClients) {
-      bool match = queries.every((queryWord) =>
-          client.firstName!.toLowerCase().contains(queryWord) ||
-          client.lastName != null &&
-              client.lastName!.toLowerCase().contains(queryWord) ||
-          client.companyName != null &&
-              client.companyName!.toLowerCase().contains(queryWord) ||
-          client.phoneNumber != null &&
-              client.phoneNumber!['number']!.contains(queryWord) ||
-          client.email != null &&
-              client.email!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            client.firstName!.toLowerCase().contains(queryWord) ||
+            client.lastName != null &&
+                client.lastName!.toLowerCase().contains(queryWord) ||
+            client.companyName != null &&
+                client.companyName!.toLowerCase().contains(queryWord) ||
+            client.phoneNumber != null &&
+                client.phoneNumber!['number']!.contains(queryWord) ||
+            client.email != null &&
+                client.email!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(client);
     }
     return matches;
@@ -1248,7 +1304,8 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     if (value.id != null && !selectedProduct!.containsKey(value.id!)) {
       double stock = -1;
       if (inventoryLocation == null || order.storeLocation == null) {
-        inventoryLocation = currentUser!.inventoryLoc != null &&
+        inventoryLocation =
+            currentUser!.inventoryLoc != null &&
                 currentUser!.inventoryLoc!.isNotEmpty
             ? currentUser!.inventoryLoc?.values.first
             : null;
@@ -1265,8 +1322,10 @@ class _OrderAddEditState extends State<OrderAddEdit> {
         }
 
         if (stock <= 0) {
-          snackbarWidget.content = appLoc!.insufficientStockFor(value.name,
-              order.storeLocation ?? currentUser!.inventoryLoc!.values.first);
+          snackbarWidget.content = appLoc!.insufficientStockFor(
+            value.name,
+            order.storeLocation ?? currentUser!.inventoryLoc!.values.first,
+          );
           snackbarWidget.showSnack();
           setState(() => _isAddingProduct = false);
           return;
@@ -1310,7 +1369,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     if (product.receipeId == null || product.receipeId!.isEmpty) return 1;
 
     if (!await ps.doesRecipeExist(
-        userId: widget.uid, recipeId: product.receipeId!)) {
+      userId: widget.uid,
+      recipeId: product.receipeId!,
+    )) {
       snackbarWidget.content = appLoc!.receipeIsMissing;
       snackbarWidget.time = 5;
       snackbarWidget.showSnack();
@@ -1318,7 +1379,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     }
 
     var receipe = await ps.futureSingleReceipe(
-        userId: widget.uid, receipeId: product.receipeId!);
+      userId: widget.uid,
+      receipeId: product.receipeId!,
+    );
 
     if (receipe.ingredients == null || receipe.ingredients!.isEmpty) return 1;
     // ── Build reserved map from selectedProducts already in the order ────────
@@ -1329,7 +1392,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       if (entry.key == product.id) continue;
 
       final selectedDetails = await ps.futureSingleProduct(
-          userId: widget.uid!, productId: entry.key);
+        userId: widget.uid!,
+        productId: entry.key,
+      );
 
       if (selectedDetails.receipeId == null ||
           selectedDetails.receipeId!.isEmpty) {
@@ -1337,18 +1402,24 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       }
 
       if (!await ps.doesRecipeExist(
-          userId: widget.uid, recipeId: selectedDetails.receipeId!)) {
+        userId: widget.uid,
+        recipeId: selectedDetails.receipeId!,
+      )) {
         continue;
       }
 
       final selectedReceipe = await ps.futureSingleReceipe(
-          userId: widget.uid!, receipeId: selectedDetails.receipeId!);
+        userId: widget.uid!,
+        receipeId: selectedDetails.receipeId!,
+      );
 
       if (selectedReceipe.ingredients == null) continue;
 
       for (var ing in selectedReceipe.ingredients!) {
         final rawItem = await ps.futureSingleRawItem(
-            userId: widget.uid!, rawItemId: ing.uid!);
+          userId: widget.uid!,
+          rawItemId: ing.uid!,
+        );
 
         double ingQtyPerUnit = ing.quantity ?? 1.0;
 
@@ -1372,20 +1443,26 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     // ── Check stock for this product (1 unit) against effective stock ────────
     for (var ingredient in receipe.ingredients!) {
       if (!await ps.doesRawItemExist(
-          userId: widget.uid, rawItemId: ingredient.uid!)) {
+        userId: widget.uid,
+        rawItemId: ingredient.uid!,
+      )) {
         snackbarWidget.content = appLoc!.rawItemMissing;
         snackbarWidget.time = 5;
         snackbarWidget.showSnack();
         return -1;
       }
       var rawItem = await ps.futureSingleRawItem(
-          userId: widget.uid!, rawItemId: ingredient.uid!);
+        userId: widget.uid!,
+        rawItemId: ingredient.uid!,
+      );
 
       if (rawItem.inventory == null ||
           rawItem.inventory!.isEmpty ||
           !rawItem.inventory!.containsKey(order.storeLocation)) {
-        snackbarWidget.content = appLoc!.insufficientStockFor(rawItem.name!,
-            order.storeLocation ?? currentUser!.inventoryLoc!.values.first);
+        snackbarWidget.content = appLoc!.insufficientStockFor(
+          rawItem.name!,
+          order.storeLocation ?? currentUser!.inventoryLoc!.values.first,
+        );
         snackbarWidget.showSnack();
         return -1;
       }
@@ -1406,15 +1483,19 @@ class _OrderAddEditState extends State<OrderAddEdit> {
 
       // 1 unit of this product needs ingredientQtyPerUnit of this raw material
       final remainingStock = effectiveStock - ingredientQtyPerUnit;
-      requiredMaterials[ingredient.name!] =
-          remainingStock >= 0 ? remainingStock : -1;
+      requiredMaterials[ingredient.name!] = remainingStock >= 0
+          ? remainingStock
+          : -1;
     }
 
     if (requiredMaterials.containsValue(-1)) {
-      var key =
-          requiredMaterials.keys.firstWhere((k) => requiredMaterials[k] == -1);
-      snackbarWidget.content =
-          appLoc!.insufficientStockFor(key, order.storeLocation!);
+      var key = requiredMaterials.keys.firstWhere(
+        (k) => requiredMaterials[k] == -1,
+      );
+      snackbarWidget.content = appLoc!.insufficientStockFor(
+        key,
+        order.storeLocation!,
+      );
       snackbarWidget.showSnack();
       stock = -1;
     } else {
@@ -1435,11 +1516,13 @@ class _OrderAddEditState extends State<OrderAddEdit> {
     }
     matches.clear();
     for (var product in allProducts) {
-      bool match = queries.every((queryWord) =>
-          product.name.toLowerCase().contains(queryWord) ||
-          product.description.toLowerCase().contains(queryWord) ||
-          product.sku != null &&
-              product.sku!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            product.name.toLowerCase().contains(queryWord) ||
+            product.description.toLowerCase().contains(queryWord) ||
+            product.sku != null &&
+                product.sku!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(product);
     }
     return matches;
@@ -1468,7 +1551,9 @@ class _OrderAddEditState extends State<OrderAddEdit> {
               var key = item.key;
               var val = item.value;
               var product = await ps.futureSingleProduct(
-                  userId: widget.uid, productId: key);
+                userId: widget.uid,
+                productId: key,
+              );
               if (product.inventory != null &&
                   product.inventory![order.storeLocation] != null) {
                 var stockReplenshed =
@@ -1490,12 +1575,16 @@ class _OrderAddEditState extends State<OrderAddEdit> {
         if (productIds.isNotEmpty) {
           for (var id in productIds) {
             if (!await ps.checkIfProductRecordExist(
-                widget.uid!, id, order.uid!)) {
+              widget.uid!,
+              id,
+              order.uid!,
+            )) {
               await ps.updateProductRecord(
-                  userId: widget.uid,
-                  productId: id,
-                  orderId: order.uid,
-                  product: order.orderedProducts![id]);
+                userId: widget.uid,
+                productId: id,
+                orderId: order.uid,
+                product: order.orderedProducts![id],
+              );
             }
           }
         }
@@ -1511,8 +1600,12 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       snackbarWidget.content = appLoc!.failedToRestoreOrder;
       snackbarWidget.time = 5;
       snackbarWidget.showSnack();
-      ErrorLoggingService.instance
-          .recordError(e, s, fatal: false, printDetails: true);
+      ErrorLoggingService.instance.recordError(
+        e,
+        s,
+        fatal: false,
+        printDetails: true,
+      );
     }
     if (mounted) {
       setState(() {
@@ -1552,8 +1645,12 @@ class _OrderAddEditState extends State<OrderAddEdit> {
       if (mounted) {
         setState(() => isLoading = false);
       }
-      ErrorLoggingService.instance
-          .recordError(e, null, fatal: false, printDetails: true);
+      ErrorLoggingService.instance.recordError(
+        e,
+        null,
+        fatal: false,
+        printDetails: true,
+      );
     }
   }
 }

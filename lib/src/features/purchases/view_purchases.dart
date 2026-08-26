@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/theme/responsive_utils.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/animation_switcher.dart';
@@ -146,8 +147,9 @@ class _PurchaseViewState extends State<PurchaseView>
                 if (purchaseshot.hasError) {
                   return Center(
                     child: MyText(
-                      text: errorClass
-                          .purchaseNotLoading(purchaseshot.error.toString()),
+                      text: errorClass.purchaseNotLoading(
+                        purchaseshot.error.toString(),
+                      ),
                       align: TextAlign.center,
                     ),
                   );
@@ -200,54 +202,70 @@ class _PurchaseViewState extends State<PurchaseView>
   // ── Filter bar ──────────────────────────────────────────
 
   Widget _buildFilterOptions() {
-    return Padding(
-      padding: responsive!.responsivePaddingHorM,
-      child: SizedBox(
-        height: responsive!.scaleHeight(50),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (selectedRange != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MyText(
-                      text:
-                          '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}'),
-                  MyText(
-                      text:
-                          '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}'),
-                ],
-              ),
-            const Spacer(),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: PeriodDropdown(
-                appLoc: appLoc!,
-                responsive: responsive!,
-                onPeriodChanged: onPeriodChanged,
-                selectedPeriod: period,
-              ),
+    // Align(topCenter), not Center — this sits inside a Stack, where
+    // Center expands to fill the whole Stack height (dictated by the much
+    // taller list below it) and re-centers vertically too, which is what
+    // pushed the filter row down into the middle of the page and behind
+    // the list's own layout box. topCenter keeps it pinned at the top,
+    // like before, just now width-capped and horizontally centered.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
+        ),
+        child: Padding(
+          padding: responsive!.responsivePaddingHorM,
+          child: SizedBox(
+            height: responsive!.scaleHeight(50),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (selectedRange != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      MyText(
+                        text:
+                            '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}',
+                      ),
+                      MyText(
+                        text:
+                            '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}',
+                      ),
+                    ],
+                  ),
+                const Spacer(),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: PeriodDropdown(
+                    appLoc: appLoc!,
+                    responsive: responsive!,
+                    onPeriodChanged: onPeriodChanged,
+                    selectedPeriod: period,
+                  ),
+                ),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: GestureDetector(
+                    onTap: () => _selectDateRange(context),
+                    child: const Icon(Icons.calendar_month),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      start = end = null;
+                      selectedRange = null;
+                    });
+                  },
+                  child: const Icon(Icons.clear_all),
+                ),
+              ],
             ),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: GestureDetector(
-                onTap: () => _selectDateRange(context),
-                child: const Icon(Icons.calendar_month),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  start = end = null;
-                  selectedRange = null;
-                });
-              },
-              child: const Icon(Icons.clear_all),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -261,21 +279,30 @@ class _PurchaseViewState extends State<PurchaseView>
         ? _filterPurchases(currentPurchases ?? [], searchController.text)
         : (currentPurchases ?? []);
 
-    return Column(
-      children: [
-        SizedBox(height: responsive!.screenHeight * 0.05),
-        SizedBox(
-          height: responsive!.screenHeight * 0.735,
-          child: filteredPurchases.isNotEmpty
-              ? _buildAnimatedOrderList()
-              : Center(
-                  child: MyText(
-                    text: appLoc!.noOrdersFound,
-                    fontScale: responsive!.scaleFont(15),
-                  ),
-                ),
+    // Align(topCenter) for the same reason as _buildFilterOptions() above.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
         ),
-      ],
+        child: Column(
+          children: [
+            SizedBox(height: responsive!.screenHeight * 0.05),
+            SizedBox(
+              height: responsive!.screenHeight * 0.735,
+              child: filteredPurchases.isNotEmpty
+                  ? _buildAnimatedOrderList()
+                  : Center(
+                      child: MyText(
+                        text: appLoc!.noOrdersFound,
+                        fontScale: responsive!.scaleFont(15),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -321,8 +348,9 @@ class _PurchaseViewState extends State<PurchaseView>
       return const SizedBox.shrink();
     }
     final purchase = filteredPurchases[index];
-    final uniqueKey =
-        Key(purchase.id ?? 'purchase_${purchase.hashCode}_$index');
+    final uniqueKey = Key(
+      purchase.id ?? 'purchase_${purchase.hashCode}_$index',
+    );
     final isCancelled = purchase.status == constStrings.cancel;
 
     return Padding(
@@ -333,10 +361,10 @@ class _PurchaseViewState extends State<PurchaseView>
       child: GestureDetector(
         onTap: () {
           if (currentPurchases![index].id != null) {
-            GoRouter.of(context).pushNamed('editPurchase', pathParameters: {
-              'uid': widget.uid!,
-              'purchaseId': purchase.id!,
-            });
+            GoRouter.of(context).pushNamed(
+              'editPurchase',
+              pathParameters: {'uid': widget.uid!, 'purchaseId': purchase.id!},
+            );
           }
         },
         child: Dismissible(
@@ -347,22 +375,19 @@ class _PurchaseViewState extends State<PurchaseView>
             padding: responsive!.responsivePaddingRight,
             decoration: BoxDecoration(
               color: isCancelled
-                  ? Theme.of(context)
-                      .colorScheme
-                      .onPrimaryFixed
-                      .withValues(alpha: 0.12)
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryFixed.withValues(alpha: 0.12)
                   : Theme.of(context).colorScheme.error.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isCancelled
-                    ? Theme.of(context)
-                        .colorScheme
-                        .onPrimaryFixed
-                        .withValues(alpha: 0.4)
-                    : Theme.of(context)
-                        .colorScheme
-                        .error
-                        .withValues(alpha: 0.4),
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.onPrimaryFixed.withValues(alpha: 0.4)
+                    : Theme.of(
+                        context,
+                      ).colorScheme.error.withValues(alpha: 0.4),
                 width: 0.5,
               ),
             ),
@@ -394,17 +419,24 @@ class _PurchaseViewState extends State<PurchaseView>
             }
           },
           onDismissed: (direction) {
-            final currentIndex = filteredPurchases
-                .indexWhere((o) => o.id == filteredPurchases[index].id);
+            final currentIndex = filteredPurchases.indexWhere(
+              (o) => o.id == filteredPurchases[index].id,
+            );
             if (currentIndex != -1) {
               if (purchase.pdfUrl != null &&
                   purchase.status != constStrings.cancel) {
                 _cancelPurchaseInPlace(
-                    index, filteredPurchases[index], constStrings.cancel);
+                  index,
+                  filteredPurchases[index],
+                  constStrings.cancel,
+                );
               } else if (purchase.pdfUrl != null &&
                   purchase.status == constStrings.cancel) {
                 _cancelPurchaseInPlace(
-                    index, filteredPurchases[index], constStrings.active);
+                  index,
+                  filteredPurchases[index],
+                  constStrings.active,
+                );
               } else {
                 _removePurchase(index);
               }
@@ -419,10 +451,9 @@ class _PurchaseViewState extends State<PurchaseView>
               border: Border.all(
                 color: isCancelled
                     ? Colors.grey.shade400
-                    : Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.25),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.25),
                 width: 0.8,
               ),
             ),
@@ -492,9 +523,9 @@ class _PurchaseViewState extends State<PurchaseView>
                                   text:
                                       '${(purchase.purchasedProducts ?? {}).length} ${appLoc!.product}',
                                   fontScale: responsive!.scaleFont(11),
-                                  fontColor: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  fontColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                                 const Spacer(),
                                 _checkOrderState(currentPurchases![index]),
@@ -503,9 +534,9 @@ class _PurchaseViewState extends State<PurchaseView>
                                   text:
                                       '${purchase.createdAt!.day}/${purchase.createdAt!.month}/${purchase.createdAt!.year}',
                                   fontScale: responsive!.scaleFont(11),
-                                  fontColor: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  fontColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ],
                             ),
@@ -559,7 +590,8 @@ class _PurchaseViewState extends State<PurchaseView>
                         alignment: Alignment.center,
                         child: Container(
                           decoration: BoxDecoration(
-                              border: Border.all(color: Colors.red)),
+                            border: Border.all(color: Colors.red),
+                          ),
                           child: Padding(
                             padding: responsive!.responsivePaddingES,
                             child: MyText(
@@ -597,8 +629,9 @@ class _PurchaseViewState extends State<PurchaseView>
               height: h,
               width: w,
               decoration: BoxDecoration(
-                  color: Colors.green.shade600,
-                  borderRadius: BorderRadius.circular(20)),
+                color: Colors.green.shade600,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Center(
                 child: MyText(
                   text: appLoc!.generated,
@@ -614,8 +647,9 @@ class _PurchaseViewState extends State<PurchaseView>
               height: h,
               width: w,
               decoration: BoxDecoration(
-                  color: Colors.orange.shade600,
-                  borderRadius: BorderRadius.circular(20)),
+                color: Colors.orange.shade600,
+                borderRadius: BorderRadius.circular(20),
+              ),
               child: Center(
                 child: MyText(
                   text: appLoc!.received,
@@ -633,8 +667,9 @@ class _PurchaseViewState extends State<PurchaseView>
         height: h,
         width: w,
         decoration: BoxDecoration(
-            color: Colors.green.shade600,
-            borderRadius: BorderRadius.circular(20)),
+          color: Colors.green.shade600,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Center(
           child: MyText(
             text: appLoc!.generated,
@@ -650,8 +685,9 @@ class _PurchaseViewState extends State<PurchaseView>
       height: h,
       width: w,
       decoration: BoxDecoration(
-          color: Colors.amber.shade600,
-          borderRadius: BorderRadius.circular(20)),
+        color: Colors.amber.shade600,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Center(
         child: MyText(
           text: appLoc!.draft,
@@ -729,7 +765,9 @@ class _PurchaseViewState extends State<PurchaseView>
   }
 
   List<PurchaseModel> _filterPurchases(
-      List<PurchaseModel> purchases, String query) {
+    List<PurchaseModel> purchases,
+    String query,
+  ) {
     String lowerQuery = query.toLowerCase();
     return purchases.where((order) {
       final nameMatch = order.supplierName!.toLowerCase().contains(lowerQuery);
@@ -739,18 +777,15 @@ class _PurchaseViewState extends State<PurchaseView>
   }
 
   void _prepareAnimations() {
-    _itemAnimations = List.generate(
-      filteredPurchases.length,
-      (index) {
-        final beginValue = (0.1 * index).clamp(0.0, 1.0);
-        return Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: _listAnimationController,
-            curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-      },
-    );
+    _itemAnimations = List.generate(filteredPurchases.length, (index) {
+      final beginValue = (0.1 * index).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(
+          parent: _listAnimationController,
+          curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
+        ),
+      );
+    });
     _animationDebouncer.run(() {
       if (mounted && _listAnimationController.isAnimating == false) {
         _listAnimationController.forward(from: 0);
@@ -806,12 +841,17 @@ class _PurchaseViewState extends State<PurchaseView>
     for (var value in (purchase.purchasedProducts ?? {}).values) {
       products.add(value);
     }
-    GoRouter.of(context).pushNamed('receiveMaterial',
-        pathParameters: {'uid': widget.uid!, 'poId': purchase.id!});
+    GoRouter.of(context).pushNamed(
+      'receiveMaterial',
+      pathParameters: {'uid': widget.uid!, 'poId': purchase.id!},
+    );
   }
 
   Future<void> _cancelPurchaseInPlace(
-      int index, PurchaseModel purchase, String status) async {
+    int index,
+    PurchaseModel purchase,
+    String status,
+  ) async {
     if (index < 0 || index >= filteredPurchases.length) return;
     if (filteredPurchases[index].id == null || widget.uid == null) return;
     purchase.status = status;
@@ -836,7 +876,9 @@ class _PurchaseViewState extends State<PurchaseView>
         }
         if (product.id == null) continue;
         var selectedProduct = await prs.futureSingleProduct(
-            userId: widget.uid!, productId: product.id!);
+          userId: widget.uid!,
+          productId: product.id!,
+        );
         if (selectedProduct.id == null || selectedProduct.inventory == null) {
           continue;
         }
@@ -856,8 +898,10 @@ class _PurchaseViewState extends State<PurchaseView>
   }
 
   Future<void> onPeriodChanged(String selectedPeriod) async {
-    final range =
-        DateRangeHelper.getDateRangeFromString(selectedPeriod, appLoc);
+    final range = DateRangeHelper.getDateRangeFromString(
+      selectedPeriod,
+      appLoc,
+    );
     setState(() {
       period = selectedPeriod;
       selectedRange = DateTimeRange(

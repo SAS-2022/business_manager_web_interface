@@ -72,7 +72,8 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         if (chartSnap.hasError) {
           return Center(
             child: MyText(
-                text: errorClass.chartStatNotFound(chartSnap.error.toString())),
+              text: errorClass.chartStatNotFound(chartSnap.error.toString()),
+            ),
           );
         } else if (chartSnap.connectionState == ConnectionState.waiting) {
           return const GradientSkeleton();
@@ -115,8 +116,9 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
 
   Widget _buildHeader() {
     final now = DateTime.now();
-    final periodLabel =
-        annual ? now.year.toString() : DateFormat('MMMM yyyy').format(now);
+    final periodLabel = annual
+        ? now.year.toString()
+        : DateFormat('MMMM yyyy').format(now);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,10 +131,7 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
               fontScale: responsive!.scaleFont(18),
               fontWeight: FontWeight.w500,
             ),
-            MyText(
-              text: periodLabel,
-              fontScale: responsive!.scaleFont(12),
-            ),
+            MyText(text: periodLabel, fontScale: responsive!.scaleFont(12)),
           ],
         ),
         const Spacer(),
@@ -156,22 +155,24 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           _toggleOption(
-              label: appLoc!.monthly,
-              selected: !annual,
-              onTap: () {
-                setState(() => annual = false);
-                prefs.setBool('annual', annual);
+            label: appLoc!.monthly,
+            selected: !annual,
+            onTap: () {
+              setState(() => annual = false);
+              prefs.setBool('annual', annual);
 
-                _refresh();
-              }),
+              _refresh();
+            },
+          ),
           _toggleOption(
-              label: appLoc!.annual,
-              selected: annual,
-              onTap: () {
-                setState(() => annual = true);
-                prefs.setBool('annual', annual);
-                _refresh();
-              }),
+            label: appLoc!.annual,
+            selected: annual,
+            onTap: () {
+              setState(() => annual = true);
+              prefs.setBool('annual', annual);
+              _refresh();
+            },
+          ),
         ],
       ),
     );
@@ -217,10 +218,14 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
   // ─── 2×2 metric grid ──────────────────────────────────────────────────────
 
   Widget _buildMetricGrid() {
-    final totalOrders =
-        topClients.fold(0, (sum, c) => sum + (c.orderCount ?? 0));
-    final totalProfit =
-        topClients.fold(0.0, (sum, c) => sum + (c.totalProfit ?? 0));
+    final totalOrders = topClients.fold(
+      0,
+      (sum, c) => sum + (c.orderCount ?? 0),
+    );
+    final totalProfit = topClients.fold(
+      0.0,
+      (sum, c) => sum + (c.totalProfit ?? 0),
+    );
 
     final items = [
       _MetricItem(
@@ -249,17 +254,29 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
       ),
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 10,
-        mainAxisSpacing: 10,
-        childAspectRatio: 1.7,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, i) => _buildMetricCard(items[i]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Add columns to use the available width instead of stacking
+        // 2 giant, mostly-empty cards per row on a wide screen.
+        const cardTargetWidth = 220.0;
+        final columns = (constraints.maxWidth / cardTargetWidth).floor().clamp(
+          1,
+          items.length,
+        );
+
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: 1.7,
+          ),
+          itemCount: items.length,
+          itemBuilder: (context, i) => _buildMetricCard(items[i]),
+        );
+      },
     );
   }
 
@@ -276,14 +293,13 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         children: [
           Row(
             children: [
-              Icon(item.icon,
-                  size: 13,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant),
-              const SizedBox(width: 4),
-              MyText(
-                text: item.label,
-                fontScale: responsive!.scaleFont(11),
+              Icon(
+                item.icon,
+                size: 13,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              const SizedBox(width: 4),
+              MyText(text: item.label, fontScale: responsive!.scaleFont(11)),
             ],
           ),
           MyText(
@@ -299,10 +315,14 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
   // ─── Donut chart ──────────────────────────────────────────────────────────
 
   Widget _buildDonutChart() {
-    final totalProfit =
-        topClients.fold(0.0, (sum, c) => sum + (c.totalProfit ?? 0));
+    final totalProfit = topClients.fold(
+      0.0,
+      (sum, c) => sum + (c.totalProfit ?? 0),
+    );
     final totalCost = topClients.fold(
-        0.0, (sum, c) => sum + ((c.totalSales ?? 0) - (c.totalProfit ?? 0)));
+      0.0,
+      (sum, c) => sum + ((c.totalSales ?? 0) - (c.totalProfit ?? 0)),
+    );
 
     return Column(
       children: [
@@ -327,11 +347,15 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _legendDot(Colors.blue,
-                'Profit  ${widget.currencySymbol}${number.format(totalProfit)}'),
+            _legendDot(
+              Colors.blue,
+              'Profit  ${widget.currencySymbol}${number.format(totalProfit)}',
+            ),
             const SizedBox(width: 20),
-            _legendDot(Colors.grey[300]!,
-                'Cost  ${widget.currencySymbol}${number.format(totalCost)}'),
+            _legendDot(
+              Colors.grey[300]!,
+              'Cost  ${widget.currencySymbol}${number.format(totalCost)}',
+            ),
           ],
         ),
       ],
@@ -362,22 +386,23 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
     final top = topClients.first;
     final initials = top.clientName != null && top.clientName!.isNotEmpty
         ? top.clientName!
-            .trim()
-            .split(' ')
-            .take(2)
-            .map((w) => w[0].toUpperCase())
-            .join()
+              .trim()
+              .split(' ')
+              .take(2)
+              .map((w) => w[0].toUpperCase())
+              .join()
         : '?';
-    final marginPct =
-        top.totalSales! > 0 ? (top.totalProfit! / top.totalSales!) * 100 : 0.0;
+    final marginPct = top.totalSales! > 0
+        ? (top.totalProfit! / top.totalSales!) * 100
+        : 0.0;
 
     return GestureDetector(
       onTap: () {
         if (top.clientId != null) {
-          GoRouter.of(context).pushNamed('editClient', pathParameters: {
-            'uid': widget.uid!,
-            'clientId': top.clientId!,
-          });
+          GoRouter.of(context).pushNamed(
+            'editClient',
+            pathParameters: {'uid': widget.uid!, 'clientId': top.clientId!},
+          );
         }
       },
       child: Container(
@@ -415,8 +440,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                   // Badge
                   Container(
                     margin: const EdgeInsets.only(bottom: 4),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(8),
@@ -441,9 +468,11 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right,
-                size: 18,
-                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            Icon(
+              Icons.chevron_right,
+              size: 18,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -473,16 +502,20 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         children: topClients.asMap().entries.map((entry) {
           final i = entry.key;
           final client = entry.value;
-          final ratio =
-              maxSales > 0 ? (client.totalSales ?? 0) / maxSales : 0.0;
+          final ratio = maxSales > 0
+              ? (client.totalSales ?? 0) / maxSales
+              : 0.0;
 
           return GestureDetector(
             onTap: () {
               if (client.clientId != null) {
-                GoRouter.of(context).pushNamed('editClient', pathParameters: {
-                  'uid': widget.uid!,
-                  'clientId': client.clientId!,
-                });
+                GoRouter.of(context).pushNamed(
+                  'editClient',
+                  pathParameters: {
+                    'uid': widget.uid!,
+                    'clientId': client.clientId!,
+                  },
+                );
               }
             },
             child: Container(
@@ -490,9 +523,9 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                 border: i < topClients.length - 1
                     ? Border(
                         bottom: BorderSide(
-                          color: Theme.of(context)
-                              .dividerColor
-                              .withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.3),
                           width: 0.5,
                         ),
                       )
@@ -514,7 +547,8 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         MyText(
-                          text: client.clientName != null &&
+                          text:
+                              client.clientName != null &&
                                   client.clientName!.length > 22
                               ? '${client.clientName!.substring(0, 22)}...'
                               : client.clientName ?? '',
@@ -527,11 +561,12 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                           child: LinearProgressIndicator(
                             value: ratio,
                             minHeight: 5,
-                            backgroundColor: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHigh,
-                            color: Colors.blue
-                                .withValues(alpha: 0.3 + 0.7 * ratio),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHigh,
+                            color: Colors.blue.withValues(
+                              alpha: 0.3 + 0.7 * ratio,
+                            ),
                           ),
                         ),
                       ],
@@ -569,8 +604,9 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
         if (snap.hasError || !snap.hasData || snap.data!.isEmpty) {
           return Container(
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.3),
               border: Border.all(
                 color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                 width: 0.5,
@@ -603,8 +639,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
             children: [
               // Summary header row
               Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   children: [
                     MyText(
@@ -614,10 +652,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () => GoRouter.of(context)
-                          .pushNamed('paymentView', pathParameters: {
-                        'uid': widget.uid ?? '',
-                      }),
+                      onTap: () => GoRouter.of(context).pushNamed(
+                        'paymentView',
+                        pathParameters: {'uid': widget.uid ?? ''},
+                      ),
                       child: MyText(
                         text: appLoc!.viewAll, // add to l10n
                         fontScale: responsive!.scaleFont(12),
@@ -636,8 +674,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
               ...payments.take(5).toList().asMap().entries.map((entry) {
                 final i = entry.key;
                 final p = entry.value;
-                return _buildPaymentRow(p,
-                    isLast: i == payments.take(5).length - 1);
+                return _buildPaymentRow(
+                  p,
+                  isLast: i == payments.take(5).length - 1,
+                );
               }),
             ],
           ),
@@ -651,7 +691,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
     final today = DateTime(now.year, now.month, now.day);
     final due = payment.dueDate != null
         ? DateTime(
-            payment.dueDate!.year, payment.dueDate!.month, payment.dueDate!.day)
+            payment.dueDate!.year,
+            payment.dueDate!.month,
+            payment.dueDate!.day,
+          )
         : null;
     final daysUntilDue = due?.difference(today).inDays;
 
@@ -685,18 +728,21 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
     final dueText = daysUntilDue == null
         ? ''
         : daysUntilDue < 0
-            ? '${daysUntilDue.abs()} days ago'
-            : daysUntilDue == 0
-                ? 'Due today'
-                : 'Due in $daysUntilDue days';
+        ? '${daysUntilDue.abs()} days ago'
+        : daysUntilDue == 0
+        ? 'Due today'
+        : 'Due in $daysUntilDue days';
 
     return GestureDetector(
       onTap: () {
         if (payment.uid != null) {
-          GoRouter.of(context).pushNamed('editPayment', pathParameters: {
-            'uid': widget.uid ?? '',
-            'paymentId': payment.uid!,
-          });
+          GoRouter.of(context).pushNamed(
+            'editPayment',
+            pathParameters: {
+              'uid': widget.uid ?? '',
+              'paymentId': payment.uid!,
+            },
+          );
         }
       },
       child: Container(
@@ -704,8 +750,9 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
           border: !isLast
               ? Border(
                   bottom: BorderSide(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                 )
@@ -730,17 +777,15 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   MyText(
-                    text: payment.clientName != null &&
+                    text:
+                        payment.clientName != null &&
                             payment.clientName!.length > 22
                         ? '${payment.clientName!.substring(0, 22)}...'
                         : payment.clientName ?? '',
                     fontScale: responsive!.scaleFont(13),
                   ),
                   if (dueText.isNotEmpty)
-                    MyText(
-                      text: dueText,
-                      fontScale: responsive!.scaleFont(11),
-                    ),
+                    MyText(text: dueText, fontScale: responsive!.scaleFont(11)),
                 ],
               ),
             ),
@@ -756,8 +801,10 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
                 ),
                 const SizedBox(height: 3),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: badgeBackground,
                     borderRadius: BorderRadius.circular(10),
@@ -809,16 +856,19 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
     final startTimestamp = startOfMonth.millisecondsSinceEpoch;
     final endTimestamp = endOfMonth.millisecondsSinceEpoch;
 
-    final currentMonthOrders = await os.futureOrderByDate(widget.uid,
-        start: startTimestamp, end: endTimestamp);
+    final currentMonthOrders = await os.futureOrderByDate(
+      widget.uid,
+      start: startTimestamp,
+      end: endTimestamp,
+    );
 
     totalMonthSales = currentMonthOrders.fold(0.0, (sum, order) {
       final orderTotal =
           order.orderedProducts?.values.fold(0.0, (productSum, product) {
-                return productSum +
-                    ((product.price ?? 0) * (product.quantity ?? 1));
-              }) ??
-              0;
+            return productSum +
+                ((product.price ?? 0) * (product.quantity ?? 1));
+          }) ??
+          0;
       return sum + orderTotal;
     });
 
@@ -827,14 +877,14 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
       if (order.clientId != null && order.clientName != null) {
         final orderTotal =
             order.orderedProducts?.values.fold(0.0, (sum, product) {
-                  return sum + ((product.price ?? 0) * (product.quantity ?? 1));
-                }) ??
-                0;
+              return sum + ((product.price ?? 0) * (product.quantity ?? 1));
+            }) ??
+            0;
         final orderProfit =
             order.orderedProducts?.values.fold(0.0, (sum, product) {
-                  return sum + ProfitCalculator.calculateProfit(product);
-                }) ??
-                0;
+              return sum + ProfitCalculator.calculateProfit(product);
+            }) ??
+            0;
 
         if (clientSalesMap.containsKey(order.clientId)) {
           clientSalesMap[order.clientId]!.totalSales =
@@ -859,12 +909,18 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
       ..sort((a, b) => b.totalSales!.compareTo(a.totalSales!));
     topClients = topClients.take(5).toList();
 
-    final totalProfit =
-        topClients.fold(0.0, (sum, client) => sum + client.totalProfit!);
+    final totalProfit = topClients.fold(
+      0.0,
+      (sum, client) => sum + client.totalProfit!,
+    );
     final totalCost = topClients.fold(
-        0.0, (sum, client) => sum + (client.totalSales! - client.totalProfit!));
-    final totalSales =
-        topClients.fold(0.0, (sum, client) => sum + client.totalSales!);
+      0.0,
+      (sum, client) => sum + (client.totalSales! - client.totalProfit!),
+    );
+    final totalSales = topClients.fold(
+      0.0,
+      (sum, client) => sum + client.totalSales!,
+    );
 
     averageMargin = totalCost > 0 ? (totalProfit / totalSales) * 100 : 0;
 
@@ -884,6 +940,10 @@ class _MetricItem {
   final String label;
   final String value;
   final String? sub;
-  const _MetricItem(
-      {required this.icon, required this.label, required this.value, this.sub});
+  const _MetricItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.sub,
+  });
 }

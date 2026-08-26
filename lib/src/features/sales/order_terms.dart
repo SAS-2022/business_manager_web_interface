@@ -4,6 +4,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/animated_radio.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/date_selector.dart';
@@ -189,22 +190,22 @@ class _OrderTermsState extends State<OrderTerms> {
       child: Row(
         children: [
           Expanded(
-            child: MyText(
-              text: label,
-              fontScale: responsive!.scaleFont(13),
-            ),
+            child: MyText(text: label, fontScale: responsive!.scaleFont(13)),
           ),
-          SizedBox(
-            width: responsive!.scaleWidth(3),
-          ),
-          SizedBox(
-            width: responsive!.screenWidth * 0.6,
+          SizedBox(width: responsive!.scaleWidth(3)),
+          // Was a fixed 60% of the full screen width — fine on a phone,
+          // but on a wide page (or once this row sits in a capped-width
+          // container) that's wider than the space actually available,
+          // so it overflows. Expanded matches whatever width it's
+          // actually given instead.
+          Expanded(
             child: MyText(
               text: value,
               fontScale: responsive!.scaleFont(13),
               fontWeight: FontWeight.w500,
               softWrap: true,
               maxLines: 2,
+              align: TextAlign.end,
             ),
           ),
         ],
@@ -244,7 +245,10 @@ class _OrderTermsState extends State<OrderTerms> {
                         order.deliveryTerms != deliveryController.text ||
                         order.returnTerms != returnController.text) {
                       var result = await warningDialog.showWarningDialog(
-                          context, appLoc!, appLoc!.unsavedData);
+                        context,
+                        appLoc!,
+                        appLoc!.unsavedData,
+                      );
                       if (result) {
                         // ignore: use_build_context_synchronously
                         NavigationHelper.resetToHome(context, widget.uid!);
@@ -253,13 +257,17 @@ class _OrderTermsState extends State<OrderTerms> {
                       NavigationHelper.resetToHome(context, widget.uid!);
                     }
                   },
-                  icon: Icon(Icons.close_outlined,
-                      size: responsive!.scaleHeight(22)),
+                  icon: Icon(
+                    Icons.close_outlined,
+                    size: responsive!.scaleHeight(22),
+                  ),
                 ),
                 if (enabled)
                   IconButton(
-                    icon: Icon(Icons.save_outlined,
-                        size: responsive!.scaleHeight(22)),
+                    icon: Icon(
+                      Icons.save_outlined,
+                      size: responsive!.scaleHeight(22),
+                    ),
                     onPressed: updateOrder,
                   ),
               ],
@@ -271,7 +279,8 @@ class _OrderTermsState extends State<OrderTerms> {
                   return Center(
                     child: MyText(
                       text: errorClass.userNoTFoundError(
-                          e: usershot.error.toString()),
+                        e: usershot.error.toString(),
+                      ),
                     ),
                   );
                 }
@@ -286,8 +295,9 @@ class _OrderTermsState extends State<OrderTerms> {
                       if (isLoading)
                         StreamBuilder<double>(
                           stream: Stream.periodic(
-                              const Duration(milliseconds: 100),
-                              (_) => ProgressManager.progress),
+                            const Duration(milliseconds: 100),
+                            (_) => ProgressManager.progress,
+                          ),
                           builder: (context, progressshot) {
                             double progress = progressshot.data ?? 0.0;
                             return Center(
@@ -346,21 +356,28 @@ class _OrderTermsState extends State<OrderTerms> {
             top: responsive!.scaleHeight(12),
             bottom: responsive!.scaleHeight(70),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              deliveryTime(),
-              termsAndCondidition(),
-              deliveryCharges(),
-              if (currentUser.salesTax != null && currentUser.salesTax! > 0)
-                salesCharges(order.orderedProducts!),
-              if (order.paymentTerms != null &&
-                  order.paymentTerms != 'Cash' &&
-                  order.paymentTerms != 'Due On Receipt')
-                paymentReminders(),
-              generateInvoice(),
-              orderStatistics(),
-            ],
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppDimensions.maxGridContentWidth,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  deliveryTime(),
+                  termsAndCondidition(),
+                  deliveryCharges(),
+                  if (currentUser.salesTax != null && currentUser.salesTax! > 0)
+                    salesCharges(order.orderedProducts!),
+                  if (order.paymentTerms != null &&
+                      order.paymentTerms != 'Cash' &&
+                      order.paymentTerms != 'Due On Receipt')
+                    paymentReminders(),
+                  generateInvoice(),
+                  orderStatistics(),
+                ],
+              ),
+            ),
           ),
         );
       },
@@ -375,42 +392,44 @@ class _OrderTermsState extends State<OrderTerms> {
       children: [
         _sectionLabel(appLoc!.deliveryTime),
         if (enabled) ...[
-          SizedBox(
-            height: responsive!.scaleHeight(110),
-            child: AnimatedRadioButton(
-              quantity: 2,
-              titles: [appLoc!.immediate, appLoc!.scheduled],
-              initialSelected: immediate ? 0 : 1,
-              onSelected: onDeliverySelected,
-            ),
+          // A single row of 2 short options doesn't need a tall fixed
+          // height the way the old vertical-stack layout did — it now
+          // sizes to its own compact content height.
+          AnimatedRadioButton(
+            quantity: 2,
+            titles: [appLoc!.immediate, appLoc!.scheduled],
+            initialSelected: immediate ? 0 : 1,
+            onSelected: onDeliverySelected,
           ),
           SizedBox(height: responsive!.scaleHeight(12)),
           immediate ? _immediateDeliveryBanner() : scheduleWidgets(),
         ] else ...[
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.orderPlacedAt,
-              value: order.orderedAt != null
-                  ? '${order.orderedAt!.day.toString().padLeft(2, '0')}-${order.orderedAt!.month.toString().padLeft(2, '0')}-${order.orderedAt!.year}'
-                  : '',
-            ),
-            _infoRow(
-              label: appLoc!.scheduledDate,
-              value: order.scheduledDate != null
-                  ? '${order.scheduledDate!.day.toString().padLeft(2, '0')}-${order.scheduledDate!.month.toString().padLeft(2, '0')}-${order.scheduledDate!.year}'
-                  : '',
-            ),
-            _infoRow(
-              label: appLoc!.scheduledTime,
-              value: order.scheduledAt != null
-                  ? '${order.scheduledAt!.hour.toString().padLeft(2, '0')}:${order.scheduledAt!.minute.toString().padLeft(2, '0')}'
-                  : '',
-            ),
-            _infoRow(
-              label: appLoc!.reminderMe,
-              value: order.setReminder! ? appLoc!.yes : appLoc!.no,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.orderPlacedAt,
+                value: order.orderedAt != null
+                    ? '${order.orderedAt!.day.toString().padLeft(2, '0')}-${order.orderedAt!.month.toString().padLeft(2, '0')}-${order.orderedAt!.year}'
+                    : '',
+              ),
+              _infoRow(
+                label: appLoc!.scheduledDate,
+                value: order.scheduledDate != null
+                    ? '${order.scheduledDate!.day.toString().padLeft(2, '0')}-${order.scheduledDate!.month.toString().padLeft(2, '0')}-${order.scheduledDate!.year}'
+                    : '',
+              ),
+              _infoRow(
+                label: appLoc!.scheduledTime,
+                value: order.scheduledAt != null
+                    ? '${order.scheduledAt!.hour.toString().padLeft(2, '0')}:${order.scheduledAt!.minute.toString().padLeft(2, '0')}'
+                    : '',
+              ),
+              _infoRow(
+                label: appLoc!.reminderMe,
+                value: order.setReminder! ? appLoc!.yes : appLoc!.no,
+              ),
+            ],
+          ),
         ],
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
@@ -427,10 +446,7 @@ class _OrderTermsState extends State<OrderTerms> {
       decoration: BoxDecoration(
         color: const Color(0xFFE6F1FB),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFFB3D4F5),
-          width: 0.5,
-        ),
+        border: Border.all(color: const Color(0xFFB3D4F5), width: 0.5),
       ),
       child: Row(
         children: [
@@ -456,10 +472,23 @@ class _OrderTermsState extends State<OrderTerms> {
   // ── Schedule widgets — logic unchanged, date/time pickers untouched ────────
 
   Widget scheduleWidgets() {
+    // Date and time are two independent, narrow pickers — stacking them
+    // made sense on a phone-width column, but on a wide web page it just
+    // left one full-width picker sitting on top of another. Side by side
+    // on anything wider than a phone; still stacked below that.
+    final isWide = responsive!.screenWidth >= 700;
     return Column(
       children: [
-        showCalendar(),
-        showTimming(),
+        isWide
+            ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: showCalendar()),
+                  SizedBox(width: responsive!.scaleWidth(20)),
+                  Expanded(child: showTimming()),
+                ],
+              )
+            : Column(children: [showCalendar(), showTimming()]),
         SizedBox(height: responsive!.scaleHeight(10)),
       ],
     );
@@ -521,10 +550,9 @@ class _OrderTermsState extends State<OrderTerms> {
                   width: responsive!.scaleWidth(32),
                   height: responsive!.scaleHeight(32),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.1),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(
@@ -571,10 +599,10 @@ class _OrderTermsState extends State<OrderTerms> {
                     decoration: BoxDecoration(
                       color:
                           order.scheduledDate != scheduleDate && dateModified!
-                              ? Theme.of(context).colorScheme.errorContainer
-                              : Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
+                          ? Theme.of(context).colorScheme.errorContainer
+                          : Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: Theme.of(context).colorScheme.primary,
@@ -607,10 +635,9 @@ class _OrderTermsState extends State<OrderTerms> {
                     width: responsive!.scaleWidth(32),
                     height: responsive!.scaleHeight(32),
                     decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.1),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -630,8 +657,9 @@ class _OrderTermsState extends State<OrderTerms> {
               onDateChanged: (date) {
                 scheduleDate = date;
                 order.scheduledDate ??= scheduleDate;
-                dateModified =
-                    scheduleDate != order.scheduledDate ? true : false;
+                dateModified = scheduleDate != order.scheduledDate
+                    ? true
+                    : false;
                 setState(() {});
               },
             ),
@@ -652,8 +680,10 @@ class _OrderTermsState extends State<OrderTerms> {
           action: enabled
               ? GestureDetector(
                   onTap: () async {
-                    await GoRouter.of(context).pushNamed('invoice_settings',
-                        pathParameters: {'uid': widget.uid!});
+                    await GoRouter.of(context).pushNamed(
+                      'invoice_settings',
+                      pathParameters: {'uid': widget.uid!},
+                    );
                     fetchInvoiceSettings();
                   },
                   child: MyText(
@@ -665,54 +695,64 @@ class _OrderTermsState extends State<OrderTerms> {
               : null,
         ),
         if (enabled)
-          _groupCard(children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
+          _groupCard(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: deliveryController,
+                  hintText: appLoc!.deliveryTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(12),
+                  maxLenght: 150,
+                  // Already inside a bordered/divided card — its own box
+                  // outline was redundant on top of the card's own border.
+                  enabledBorders: false,
+                ),
               ),
-              child: MyTextField(
-                controller: deliveryController,
-                hintText: appLoc!.deliveryTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(12),
-                maxLenght: 150,
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: returnController,
+                  hintText: currentUser.businessType == 'service'
+                      ? appLoc!.returnTermsService
+                      : appLoc!.returnTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(12),
+                  maxLenght: 150,
+                  enabledBorders: false,
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
-              ),
-              child: MyTextField(
-                controller: returnController,
-                hintText: currentUser.businessType == 'service'
-                    ? appLoc!.returnTermsService
-                    : appLoc!.returnTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(12),
-                maxLenght: 150,
-              ),
-            ),
-          ])
+            ],
+          )
         else
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.deliveryTerms,
-              value:
-                  order.deliveryTerms != null && order.deliveryTerms!.isNotEmpty
-                      ? order.deliveryTerms!
-                      : appLoc!.noDeliveryTerms,
-            ),
-            _infoRow(
-              label: appLoc!.returnTerms,
-              value: order.returnTerms != null && order.returnTerms!.isNotEmpty
-                  ? order.returnTerms!
-                  : appLoc!.noReturnRefundTermsSet,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.deliveryTerms,
+                value:
+                    order.deliveryTerms != null &&
+                        order.deliveryTerms!.isNotEmpty
+                    ? order.deliveryTerms!
+                    : appLoc!.noDeliveryTerms,
+              ),
+              _infoRow(
+                label: appLoc!.returnTerms,
+                value:
+                    order.returnTerms != null && order.returnTerms!.isNotEmpty
+                    ? order.returnTerms!
+                    : appLoc!.noReturnRefundTermsSet,
+              ),
+            ],
+          ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -726,32 +766,37 @@ class _OrderTermsState extends State<OrderTerms> {
       children: [
         _sectionLabel(appLoc!.deliveryCharges),
         if (enabled)
-          _groupCard(children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
+          _groupCard(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: deliveryChargesController,
+                  hintText: appLoc!.deliveryFees,
+                  lines: 1,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(14),
+                  isNumberKeyboard: true,
+                  prefix: currency,
+                  enabledBorders: false,
+                ),
               ),
-              child: MyTextField(
-                controller: deliveryChargesController,
-                hintText: appLoc!.deliveryFees,
-                lines: 1,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(14),
-                isNumberKeyboard: true,
-                prefix: currency,
-              ),
-            ),
-          ])
+            ],
+          )
         else
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.deliveryFees,
-              value: order.deliveryFees != null && order.deliveryFees! > 0
-                  ? '$currency ${number.format(order.deliveryFees)}'
-                  : appLoc!.noDeliveryFees,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.deliveryFees,
+                value: order.deliveryFees != null && order.deliveryFees! > 0
+                    ? '$currency ${number.format(order.deliveryFees)}'
+                    : appLoc!.noDeliveryFees,
+              ),
+            ],
+          ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -764,38 +809,10 @@ class _OrderTermsState extends State<OrderTerms> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(appLoc!.salesTax),
-        _groupCard(children: [
-          if (enabled)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(14),
-                vertical: responsive!.scaleHeight(12),
-              ),
-              child: Row(
-                children: [
-                  MyText(
-                    text: 'Apply ${currentUser.salesTax}% ${appLoc!.salesTax}',
-                    fontScale: responsive!.scaleFont(13),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: responsive!.scaleWidth(70),
-                    child: NeumorphicToggle(
-                      value: addSalesCharges!,
-                      onChanged: (value) {
-                        setState(() => addSalesCharges = value);
-                        _updatePrices(orderProducts);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ValueListenableBuilder<double>(
-            valueListenable: _taxValueNotifier,
-            builder: (context, value, child) {
-              return Padding(
+        _groupCard(
+          children: [
+            if (enabled)
+              Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: responsive!.scaleWidth(14),
                   vertical: responsive!.scaleHeight(12),
@@ -803,26 +820,57 @@ class _OrderTermsState extends State<OrderTerms> {
                 child: Row(
                   children: [
                     MyText(
-                      text: appLoc!.taxValue,
-                      fontScale: responsive!.scaleFont(13),
-                    ),
-                    const Spacer(),
-                    MyText(
-                      text: '${currentUser.salesTax}%',
-                      fontScale: responsive!.scaleFont(12),
-                    ),
-                    SizedBox(width: responsive!.scaleWidth(12)),
-                    MyText(
-                      text: '$currency ${number.format(value)}',
+                      text:
+                          'Apply ${currentUser.salesTax}% ${appLoc!.salesTax}',
                       fontScale: responsive!.scaleFont(13),
                       fontWeight: FontWeight.w500,
                     ),
+                    const Spacer(),
+                    SizedBox(
+                      width: responsive!.scaleWidth(70),
+                      child: NeumorphicToggle(
+                        value: addSalesCharges!,
+                        onChanged: (value) {
+                          setState(() => addSalesCharges = value);
+                          _updatePrices(orderProducts);
+                        },
+                      ),
+                    ),
                   ],
                 ),
-              );
-            },
-          ),
-        ]),
+              ),
+            ValueListenableBuilder<double>(
+              valueListenable: _taxValueNotifier,
+              builder: (context, value, child) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: responsive!.scaleWidth(14),
+                    vertical: responsive!.scaleHeight(12),
+                  ),
+                  child: Row(
+                    children: [
+                      MyText(
+                        text: appLoc!.taxValue,
+                        fontScale: responsive!.scaleFont(13),
+                      ),
+                      const Spacer(),
+                      MyText(
+                        text: '${currentUser.salesTax}%',
+                        fontScale: responsive!.scaleFont(12),
+                      ),
+                      SizedBox(width: responsive!.scaleWidth(12)),
+                      MyText(
+                        text: '$currency ${number.format(value)}',
+                        fontScale: responsive!.scaleFont(13),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -837,20 +885,22 @@ class _OrderTermsState extends State<OrderTerms> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(appLoc!.collection),
-        _groupCard(children: [
-          Padding(
-            padding: EdgeInsets.symmetric(
-              horizontal: responsive!.scaleWidth(14),
-              vertical: responsive!.scaleHeight(12),
+        _groupCard(
+          children: [
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: responsive!.scaleWidth(14),
+                vertical: responsive!.scaleHeight(12),
+              ),
+              child: MyText(
+                text: appLoc!.collectionReminder(days),
+                fontScale: responsive!.scaleFont(13),
+                softWrap: true,
+                textOverflow: TextOverflow.visible,
+              ),
             ),
-            child: MyText(
-              text: appLoc!.collectionReminder(days),
-              fontScale: responsive!.scaleFont(13),
-              softWrap: true,
-              textOverflow: TextOverflow.visible,
-            ),
-          ),
-        ]),
+          ],
+        ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -912,10 +962,9 @@ class _OrderTermsState extends State<OrderTerms> {
                           width: responsive!.scaleWidth(40),
                           height: responsive!.scaleHeight(40),
                           decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .error
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -953,7 +1002,8 @@ class _OrderTermsState extends State<OrderTerms> {
                 child: Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
-                      vertical: responsive!.scaleHeight(14)),
+                    vertical: responsive!.scaleHeight(14),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     borderRadius: const BorderRadius.only(
@@ -1113,7 +1163,9 @@ class _OrderTermsState extends State<OrderTerms> {
         Text(
           text,
           style: TextStyle(
-              fontSize: responsive!.scaleFont(10), color: Colors.grey[600]),
+            fontSize: responsive!.scaleFont(10),
+            color: Colors.grey[600],
+          ),
         ),
       ],
     );
@@ -1129,8 +1181,10 @@ class _OrderTermsState extends State<OrderTerms> {
     }
     double? value = double.tryParse(deliveryChargesController.text);
     if (value == null) {
-      String cleanedText =
-          deliveryChargesController.text.replaceAll(RegExp(r'[^\d\.\-]'), '');
+      String cleanedText = deliveryChargesController.text.replaceAll(
+        RegExp(r'[^\d\.\-]'),
+        '',
+      );
       value = double.tryParse(cleanedText);
     }
     if (addSalesCharges! && _taxValueNotifier.value > 0) {
@@ -1205,7 +1259,8 @@ class _OrderTermsState extends State<OrderTerms> {
       setState(() {});
       return;
     }
-    timeModified = time.hour != order.scheduledAt!.hour ||
+    timeModified =
+        time.hour != order.scheduledAt!.hour ||
         time.minute != order.scheduledAt!.minute;
     setState(() {});
   }
@@ -1242,8 +1297,9 @@ class _OrderTermsState extends State<OrderTerms> {
     immediate = result.scheduled ?? true;
     scheduleDate = result.scheduledDate;
     scheduledAt = result.scheduledAt;
-    deliveryChargesController.text =
-        result.deliveryFees != null ? result.deliveryFees.toString() : '';
+    deliveryChargesController.text = result.deliveryFees != null
+        ? result.deliveryFees.toString()
+        : '';
     reminderSet = result.setReminder ?? false;
     if (order.taxAmount != null && order.taxAmount! > 0) addSalesCharges = true;
     if (paymentReminderSet != null) {
@@ -1270,7 +1326,8 @@ class _OrderTermsState extends State<OrderTerms> {
     deliveryController.text = deliveryTerms;
     returnController.text = returnTerms;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      orderTotalValue = calculateTotalPrice(order.orderedProducts) +
+      orderTotalValue =
+          calculateTotalPrice(order.orderedProducts) +
           (order.deliveryFees ?? 0) +
           (order.taxAmount ?? 0);
       _valueNotifier.value = orderTotalValue!;
@@ -1295,10 +1352,11 @@ class _OrderTermsState extends State<OrderTerms> {
     if (order.orderedProducts != null && order.orderedProducts!.isNotEmpty) {
       order.orderedProducts!.forEach((key, product) async {
         await ps.updateProductRecord(
-            userId: widget.uid!,
-            productId: product.id,
-            product: product,
-            orderId: order.uid);
+          userId: widget.uid!,
+          productId: product.id,
+          product: product,
+          orderId: order.uid,
+        );
       });
     }
     if (deliveryChargesController.text.isNotEmpty) {
@@ -1318,7 +1376,9 @@ class _OrderTermsState extends State<OrderTerms> {
         scheduleDateUtc: immediate
             ? DateTime.now().toUtc()
             : _combineDateAndTime(
-                scheduleDate ?? DateTime.now(), scheduledAt ?? TimeOfDay.now()),
+                scheduleDate ?? DateTime.now(),
+                scheduledAt ?? TimeOfDay.now(),
+              ),
         deliveryTerms: deliveryController.text,
         returnTerms: returnController.text,
         deliveryFees: order.deliveryFees,
@@ -1332,15 +1392,17 @@ class _OrderTermsState extends State<OrderTerms> {
       await os.editOrder(uid: widget.uid, order: newOrder);
       if (order.paymentTerms != null &&
           order.paymentTerms!.startsWith('Credit')) {
-        paymentReminderDate = DateTime.now()
-            .add(Duration(days: getCreditDays(order.paymentTerms!)));
+        paymentReminderDate = DateTime.now().add(
+          Duration(days: getCreditDays(order.paymentTerms!)),
+        );
         Payments payment = Payments(
           uid: order.uid!.replaceFirst('OR', 'P'),
           clientId: order.clientId,
           clientName: order.clientName,
           amount: orderTotalValue ?? 0,
           createdAt: DateTime.now(),
-          dueDate: paymentReminderDate ??
+          dueDate:
+              paymentReminderDate ??
               DateTime.now().add(const Duration(hours: 1)),
           paymentTerms: order.paymentTerms!,
           orderId: order.uid,
@@ -1376,10 +1438,11 @@ class _OrderTermsState extends State<OrderTerms> {
     if (order.orderedProducts != null && order.orderedProducts!.isNotEmpty) {
       order.orderedProducts!.forEach((key, product) async {
         await ps.updateProductRecord(
-            userId: widget.uid!,
-            productId: product.id,
-            product: product,
-            orderId: order.uid);
+          userId: widget.uid!,
+          productId: product.id,
+          product: product,
+          orderId: order.uid,
+        );
       });
     }
     if (deliveryChargesController.text.isNotEmpty) {
@@ -1399,7 +1462,9 @@ class _OrderTermsState extends State<OrderTerms> {
         scheduleDateUtc: immediate
             ? DateTime.now().toUtc()
             : _combineDateAndTime(
-                scheduleDate ?? DateTime.now(), scheduledAt ?? TimeOfDay.now()),
+                scheduleDate ?? DateTime.now(),
+                scheduledAt ?? TimeOfDay.now(),
+              ),
         deliveryTerms: deliveryController.text,
         returnTerms: returnController.text,
         deliveryFees: order.deliveryFees,
@@ -1413,15 +1478,17 @@ class _OrderTermsState extends State<OrderTerms> {
       await os.editOrder(uid: widget.uid, order: newOrder);
       if (order.paymentTerms != null &&
           order.paymentTerms!.startsWith('Credit')) {
-        paymentReminderDate = DateTime.now()
-            .add(Duration(days: getCreditDays(order.paymentTerms!)));
+        paymentReminderDate = DateTime.now().add(
+          Duration(days: getCreditDays(order.paymentTerms!)),
+        );
         Payments payment = Payments(
           uid: order.uid!.replaceFirst('OR', 'P'),
           clientId: order.clientId,
           clientName: order.clientName,
           amount: orderTotalValue ?? 0,
           createdAt: DateTime.now(),
-          dueDate: paymentReminderDate ??
+          dueDate:
+              paymentReminderDate ??
               DateTime.now().add(const Duration(hours: 1)),
           paymentTerms: order.paymentTerms!,
           orderId: order.uid,
@@ -1456,7 +1523,8 @@ class _OrderTermsState extends State<OrderTerms> {
   }
 
   double _calculateMarginPercentage(
-      Map<String, OrderProducts>? orderedProducts) {
+    Map<String, OrderProducts>? orderedProducts,
+  ) {
     if (orderedProducts == null || orderedProducts.isEmpty) return 0.0;
     final totalPrice = calculateTotalPrice(orderedProducts);
     final totalCost = calculateTotalCost(orderedProducts);
@@ -1487,8 +1555,13 @@ class _OrderTermsState extends State<OrderTerms> {
   }
 
   DateTime _combineDateAndTime(DateTime date, TimeOfDay time) {
-    return DateTime(date.year, date.month, date.day, time.hour, time.minute)
-        .toUtc();
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    ).toUtc();
   }
 
   int getCreditDays(String paymentTerms) {
@@ -1518,8 +1591,9 @@ class _OrderTermsState extends State<OrderTerms> {
       snackbarWidget.time = 7;
       snackbarWidget.buttonText = appLoc!.settings;
       snackbarWidget.onButtonPressed = () async {
-        await GoRouter.of(context)
-            .pushNamed('accounts', pathParameters: {'uid': widget.uid!});
+        await GoRouter.of(
+          context,
+        ).pushNamed('accounts', pathParameters: {'uid': widget.uid!});
         _refreshUserData();
       };
       snackbarWidget.showSnack();
@@ -1530,8 +1604,9 @@ class _OrderTermsState extends State<OrderTerms> {
       snackbarWidget.time = 7;
       snackbarWidget.buttonText = appLoc!.settings;
       snackbarWidget.onButtonPressed = () async {
-        GoRouter.of(context)
-            .pushNamed('accounts', pathParameters: {'uid': widget.uid!});
+        GoRouter.of(
+          context,
+        ).pushNamed('accounts', pathParameters: {'uid': widget.uid!});
         _refreshUserData();
       };
       snackbarWidget.showSnack();
@@ -1551,8 +1626,9 @@ class _OrderTermsState extends State<OrderTerms> {
     StringBuffer termsAndConditions = StringBuffer();
     if (deliveryController.text.isNotEmpty) {
       order.deliveryTerms = deliveryController.text;
-      termsAndConditions
-          .writeln('${appLoc!.deliveryTerms}: ${order.deliveryTerms}');
+      termsAndConditions.writeln(
+        '${appLoc!.deliveryTerms}: ${order.deliveryTerms}',
+      );
     }
     if (returnController.text.isNotEmpty) {
       order.returnTerms = returnController.text;
@@ -1565,7 +1641,10 @@ class _OrderTermsState extends State<OrderTerms> {
       recordId: order.uid,
     );
     await cs.setRecord(
-        uid: widget.uid, clientId: order.clientId, record: statementRecord);
+      uid: widget.uid,
+      clientId: order.clientId,
+      record: statementRecord,
+    );
     await updateOrderWithoutLoading();
     try {
       PdfDocument pdf = await generateSalesInvoice(

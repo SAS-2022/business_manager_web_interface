@@ -1,4 +1,5 @@
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/providers/providers.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
@@ -7,9 +8,7 @@ import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
 import 'package:business_manager_web_ui/src/models/user_model.dart';
 import 'package:business_manager_web_ui/src/services/database_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -174,9 +173,20 @@ class _ProductScreenState extends ConsumerState<ProductScreen>
       );
     }
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: responsive!.scaleWidth(16)),
-      child: _buildProductContent(user, products),
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
+        ),
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: responsive!.screenWidth < 600
+                ? responsive!.scaleWidth(16)
+                : 32,
+          ),
+          child: _buildProductContent(user, products),
+        ),
+      ),
     );
   }
 
@@ -358,36 +368,50 @@ class _ProductScreenState extends ConsumerState<ProductScreen>
 
   Widget _buildProductList(List<Product> filteredProducts) {
     return Expanded(
-      child: GridView.builder(
-        key: PageStorageKey('product_grid_${widget.uid}_$selectedCategory'),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: responsive!.deviceType == 1 ? 2 : 3,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.72,
-        ),
-        itemCount: filteredProducts.length,
-        itemBuilder: (context, index) {
-          final product = filteredProducts[index];
-          return GestureDetector(
-            onTap: () {
-              GoRouter.of(context)
-                  .pushNamed(
-                    'editProduct',
-                    pathParameters: {
-                      'uid': widget.uid!,
-                      'productId': product.id!,
-                    },
-                  )
-                  .then((_) {
-                    ref.invalidate(
-                      productsStreamProvider(
-                        ProductsParams(widget.uid!, selectedCategory),
-                      ),
-                    );
-                  });
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Columns scale with available width instead of a fixed 2/3 —
+          // a fixed count let each card's cell stretch to fill whatever
+          // width was left over (a single product on a wide screen became
+          // one enormous card) since crossAxisCount alone doesn't bound
+          // cell width, only the column count.
+          const cardTargetWidth = 180.0;
+          final columns = (constraints.maxWidth / cardTargetWidth)
+              .floor()
+              .clamp(1, 100);
+
+          return GridView.builder(
+            key: PageStorageKey('product_grid_${widget.uid}_$selectedCategory'),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: columns,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+              childAspectRatio: 0.72,
+            ),
+            itemCount: filteredProducts.length,
+            itemBuilder: (context, index) {
+              final product = filteredProducts[index];
+              return GestureDetector(
+                onTap: () {
+                  GoRouter.of(context)
+                      .pushNamed(
+                        'editProduct',
+                        pathParameters: {
+                          'uid': widget.uid!,
+                          'productId': product.id!,
+                        },
+                      )
+                      .then((_) {
+                        ref.invalidate(
+                          productsStreamProvider(
+                            ProductsParams(widget.uid!, selectedCategory),
+                          ),
+                        );
+                      });
+                },
+                child: _buildProductCard(product),
+              );
             },
-            child: _buildProductCard(product),
           );
         },
       ),
@@ -460,28 +484,32 @@ class _ProductScreenState extends ConsumerState<ProductScreen>
                             ),
                           );
                         }
-                        return CachedNetworkImage(
+                        // Image.network instead of CachedNetworkImage — the
+                        // latter fetches bytes over HTTP to cache them,
+                        // which needs CORS headers Firebase Storage doesn't
+                        // send by default and fails on web (shows as a
+                        // broken-image icon). Image.network renders as a
+                        // plain browser image load instead, same fix
+                        // already applied to map snapshots in map_snap.dart.
+                        return Image.network(
+                          imageshot.data!.imageUrl!,
                           width: double.infinity,
-                          imageUrl: imageshot.data!.imageUrl!,
-                          cacheManager: CacheManager(
-                            Config(
-                              'customCacheKey',
-                              stalePeriod: const Duration(days: 7),
-                              maxNrOfCacheObjects: 100,
-                            ),
-                          ),
-                          placeholder: (_, __) => Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                          ),
-                          errorWidget: (_, __, ___) => Container(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                            child: const Icon(Icons.broken_image_outlined),
-                          ),
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return Container(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                child: const Icon(Icons.broken_image_outlined),
+                              ),
                         );
                       },
                     ),
@@ -548,7 +576,13 @@ class _ProductScreenState extends ConsumerState<ProductScreen>
     }
 
     return SizedBox(
-      width: responsive!.screenWidth * 0.78,
+      // 78% of screen width was tuned for a phone-sized drawer — on a
+      // desktop browser that stretched to ~1500px for what's just a search
+      // box, a category row, and two price fields. Cap it to a normal
+      // filter-panel width on wider screens instead.
+      width: responsive!.screenWidth < 600
+          ? responsive!.screenWidth * 0.78
+          : 380,
       child: Drawer(
         elevation: 5,
         surfaceTintColor: Theme.of(context).scaffoldBackgroundColor,

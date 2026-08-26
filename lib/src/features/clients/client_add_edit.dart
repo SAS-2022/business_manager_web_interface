@@ -134,10 +134,7 @@ class _ClientAddEditState extends State<ClientAddEdit> {
     );
   }
 
-  Widget _fieldRow({
-    required IconData icon,
-    required Widget child,
-  }) {
+  Widget _fieldRow({required IconData icon, required Widget child}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -166,7 +163,8 @@ class _ClientAddEditState extends State<ClientAddEdit> {
           builder: (context, usershot) {
             if (usershot.hasError) {
               return Center(
-                  child: MyText(text: errorClass.userNoTFoundError()));
+                child: MyText(text: errorClass.userNoTFoundError()),
+              );
             }
             if (usershot.connectionState == ConnectionState.waiting) {
               return const GradientSkeleton();
@@ -194,12 +192,16 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                           'clientId': widget.clientId!,
                         },
                       ),
-                      icon: Icon(Icons.receipt_long_outlined,
-                          size: responsive!.scaleHeight(22)),
+                      icon: Icon(
+                        Icons.receipt_long_outlined,
+                        size: responsive!.scaleHeight(22),
+                      ),
                     ),
                   IconButton(
-                    icon: Icon(Icons.save_outlined,
-                        size: responsive!.scaleHeight(22)),
+                    icon: Icon(
+                      Icons.save_outlined,
+                      size: responsive!.scaleHeight(22),
+                    ),
                     onPressed: () =>
                         widget.clientId == null ? addClient() : updateClient(),
                   ),
@@ -241,148 +243,158 @@ class _ClientAddEditState extends State<ClientAddEdit> {
             children: [
               // ── Client type toggle ──────────────────────────────────────
               _sectionLabel(appLoc!.clientType),
-              SizedBox(
-                height: responsive!.scaleHeight(110),
-                width: responsive!.screenWidth,
-                child: AnimatedRadioButton(
-                  quantity: 2,
-                  titles: [appLoc!.individual, appLoc!.company],
-                  initialSelected: isIndividual ? 0 : 1,
-                  onSelected: onClientTypeSelected,
-                ),
+              // A single row of 2 short options doesn't need a tall fixed
+              // height the way the old vertical-stack layout did — it now
+              // sizes to its own compact content height.
+              AnimatedRadioButton(
+                quantity: 2,
+                titles: [appLoc!.individual, appLoc!.company],
+                initialSelected: isIndividual ? 0 : 1,
+                onSelected: onClientTypeSelected,
               ),
               SizedBox(height: responsive!.scaleHeight(20)),
 
               // ── Personal / Company info ─────────────────────────────────
-              _sectionLabel(isIndividual
-                  ? appLoc!.personalInfo // add to l10n
-                  : appLoc!.companyInfo), // add to l10n
-              _groupCard(children: [
-                if (!isIndividual)
+              _sectionLabel(
+                isIndividual
+                    ? appLoc!
+                          .personalInfo // add to l10n
+                    : appLoc!.companyInfo,
+              ), // add to l10n
+              _groupCard(
+                children: [
+                  if (!isIndividual)
+                    _fieldRow(
+                      icon: Icons.business_outlined,
+                      child: FlushTextField(
+                        controller: companyNameController,
+                        hintText: appLoc!.company,
+                        textCapitalization: TextCapitalization.words,
+                        fontSize: responsive!.scaleFont(13),
+                      ),
+                    ),
                   _fieldRow(
-                    icon: Icons.business_outlined,
+                    icon: Icons.person_outline_rounded,
                     child: FlushTextField(
-                      controller: companyNameController,
-                      hintText: appLoc!.company,
+                      controller: firstNameController,
+                      hintText: appLoc!.firstName,
                       textCapitalization: TextCapitalization.words,
                       fontSize: responsive!.scaleFont(13),
                     ),
                   ),
-                _fieldRow(
-                  icon: Icons.person_outline_rounded,
-                  child: FlushTextField(
-                    controller: firstNameController,
-                    hintText: appLoc!.firstName,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
+                  _fieldRow(
+                    icon: Icons.person_outline_rounded,
+                    child: FlushTextField(
+                      controller: lastNameController,
+                      hintText: appLoc!.lastName,
+                      textCapitalization: TextCapitalization.words,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-                _fieldRow(
-                  icon: Icons.person_outline_rounded,
-                  child: FlushTextField(
-                    controller: lastNameController,
-                    hintText: appLoc!.lastName,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
-                  ),
-                ),
-              ]),
+                ],
+              ),
 
               SizedBox(height: responsive!.scaleHeight(20)),
 
               // ── Contact info ────────────────────────────────────────────
               _sectionLabel(appLoc!.contactInfo),
-              _groupCard(children: [
-                // Phone row — CountryCodePhone + FlushTextField
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Padding(
-                      padding: EdgeInsets.only(
-                        left: responsive!.scaleWidth(14),
-                      ),
-                      child: SizedBox(
-                        width: responsive!.screenWidth * 0.25,
-                        child: CountryCodePhone(
-                          initialCode: phoneCountry,
-                          onSelected: (code, country) {
-                            if (code.isNotEmpty) {
-                              phoneCode = code;
-                              phoneCountry = country;
-                              phoneLength =
-                                  PhoneValidators.getPhoneNumberLength(
-                                      phoneCountry ?? 'US');
-                              setState(() {});
-                            }
-                          },
+              _groupCard(
+                children: [
+                  // Phone row — CountryCodePhone + FlushTextField
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: responsive!.scaleWidth(14),
+                        ),
+                        child: SizedBox(
+                          width: responsive!.screenWidth * 0.25,
+                          child: CountryCodePhone(
+                            initialCode: phoneCountry,
+                            onSelected: (code, country) {
+                              if (code.isNotEmpty) {
+                                phoneCode = code;
+                                phoneCountry = country;
+                                phoneLength =
+                                    PhoneValidators.getPhoneNumberLength(
+                                      phoneCountry ?? 'US',
+                                    );
+                                setState(() {});
+                              }
+                            },
+                          ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: FlushTextField(
-                        controller: phoneNumberController,
-                        hintText: appLoc!.phoneNumber,
-                        keyboardType: TextInputType.phone,
-                        maxLength: phoneLength,
-                        fontSize: responsive!.scaleFont(13),
+                      Expanded(
+                        child: FlushTextField(
+                          controller: phoneNumberController,
+                          hintText: appLoc!.phoneNumber,
+                          keyboardType: TextInputType.phone,
+                          maxLength: phoneLength,
+                          fontSize: responsive!.scaleFont(13),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                _fieldRow(
-                  icon: Icons.mail_outline_rounded,
-                  child: FlushTextField(
-                    controller: emailAddressController,
-                    hintText: appLoc!.emailAddress,
-                    keyboardType: TextInputType.emailAddress,
-                    fontSize: responsive!.scaleFont(13),
+                    ],
                   ),
-                ),
-              ]),
+                  _fieldRow(
+                    icon: Icons.mail_outline_rounded,
+                    child: FlushTextField(
+                      controller: emailAddressController,
+                      hintText: appLoc!.emailAddress,
+                      keyboardType: TextInputType.emailAddress,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
+                  ),
+                ],
+              ),
 
               SizedBox(height: responsive!.scaleHeight(20)),
 
               // ── Official / Financial data ───────────────────────────────
               _sectionLabel(
-                  appLoc!.officialData), // add to l10n: "Official data"
-              _groupCard(children: [
-                _fieldRow(
-                  icon: Icons.numbers_outlined,
-                  child: FlushTextField(
-                    controller: financialNumberController,
-                    hintText: appLoc!.financialNumber,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
+                appLoc!.officialData,
+              ), // add to l10n: "Official data"
+              _groupCard(
+                children: [
+                  _fieldRow(
+                    icon: Icons.numbers_outlined,
+                    child: FlushTextField(
+                      controller: financialNumberController,
+                      hintText: appLoc!.financialNumber,
+                      textCapitalization: TextCapitalization.words,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-                _fieldRow(
-                  icon: Icons.badge_outlined,
-                  child: FlushTextField(
-                    controller: crNumberController,
-                    hintText: appLoc!.crNumber,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
+                  _fieldRow(
+                    icon: Icons.badge_outlined,
+                    child: FlushTextField(
+                      controller: crNumberController,
+                      hintText: appLoc!.crNumber,
+                      textCapitalization: TextCapitalization.words,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-                _fieldRow(
-                  icon: Icons.account_balance_outlined,
-                  child: FlushTextField(
-                    controller: ibanNumberController,
-                    hintText: appLoc!.ibanNumber,
-                    textCapitalization: TextCapitalization.characters,
-                    fontSize: responsive!.scaleFont(13),
+                  _fieldRow(
+                    icon: Icons.account_balance_outlined,
+                    child: FlushTextField(
+                      controller: ibanNumberController,
+                      hintText: appLoc!.ibanNumber,
+                      textCapitalization: TextCapitalization.characters,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-                _fieldRow(
-                  icon: Icons.corporate_fare_outlined,
-                  child: FlushTextField(
-                    controller: bankNameController,
-                    hintText: appLoc!.bankName,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
+                  _fieldRow(
+                    icon: Icons.corporate_fare_outlined,
+                    child: FlushTextField(
+                      controller: bankNameController,
+                      hintText: appLoc!.bankName,
+                      textCapitalization: TextCapitalization.words,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
 
               SizedBox(height: responsive!.scaleHeight(20)),
 
@@ -430,10 +442,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
             _sectionLabel(appLoc!.clientOrders),
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surface
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surface.withValues(alpha: 0.5),
                 border: Border.all(
                   color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                   width: 0.5,
@@ -459,24 +470,26 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                               height: 0,
                               thickness: 0.5,
                               indent: responsive!.scaleWidth(14),
-                              color: Theme.of(context)
-                                  .dividerColor
-                                  .withValues(alpha: 0.25),
+                              color: Theme.of(
+                                context,
+                              ).dividerColor.withValues(alpha: 0.25),
                             ),
                             itemBuilder: (context, index) {
                               double orderValue = 0.0;
-                              for (var product in (orders[index]
-                                      .orderedProducts ??
-                                  {}).values) {
+                              for (var product
+                                  in (orders[index].orderedProducts ?? {})
+                                      .values) {
                                 orderValue +=
                                     product.price! * product.quantity!;
                               }
                               return GestureDetector(
-                                onTap: () => GoRouter.of(context)
-                                    .pushNamed('editOrder', pathParameters: {
-                                  'uid': widget.uid!,
-                                  'orderId': orders[index].uid!,
-                                }),
+                                onTap: () => GoRouter.of(context).pushNamed(
+                                  'editOrder',
+                                  pathParameters: {
+                                    'uid': widget.uid!,
+                                    'orderId': orders[index].uid!,
+                                  },
+                                ),
                                 child: Padding(
                                   padding: EdgeInsets.symmetric(
                                     horizontal: responsive!.scaleWidth(14),
@@ -487,12 +500,13 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                                       Icon(
                                         Icons.chevron_right,
                                         size: responsive!.scaleHeight(14),
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .primary,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
                                       ),
                                       SizedBox(
-                                          width: responsive!.scaleWidth(6)),
+                                        width: responsive!.scaleWidth(6),
+                                      ),
                                       MyText(
                                         text:
                                             '${orders[index].orderedAt!.day}/${orders[index].orderedAt!.month}/${orders[index].orderedAt!.year}',
@@ -516,8 +530,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                   Divider(
                     height: 0,
                     thickness: 0.5,
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
                   ),
                   Padding(
                     padding: EdgeInsets.symmetric(
@@ -561,9 +576,10 @@ class _ClientAddEditState extends State<ClientAddEdit> {
         }
         if (snapshot.hasError) {
           return Center(
-              child: MyText(
-                  text: errorClass
-                      .expensesNotLoading(snapshot.error.toString())));
+            child: MyText(
+              text: errorClass.expensesNotLoading(snapshot.error.toString()),
+            ),
+          );
         }
 
         final payments = snapshot.data ?? [];
@@ -579,10 +595,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
             _sectionLabel(appLoc!.upcomingPayments),
             Container(
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .surface
-                    .withValues(alpha: 0.5),
+                color: Theme.of(
+                  context,
+                ).colorScheme.surface.withValues(alpha: 0.5),
                 border: Border.all(
                   color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
                   width: 0.5,
@@ -594,8 +609,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                   final i = entry.key;
                   final payment = entry.value;
                   final isLast = i == upcoming.length - 1;
-                  final daysUntilDue =
-                      payment.dueDate!.difference(DateTime.now()).inDays;
+                  final daysUntilDue = payment.dueDate!
+                      .difference(DateTime.now())
+                      .inDays;
 
                   Color dotColor;
                   Color badgeBg;
@@ -633,7 +649,8 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                               width: 8,
                               height: 8,
                               margin: EdgeInsets.only(
-                                  right: responsive!.scaleWidth(10)),
+                                right: responsive!.scaleWidth(10),
+                              ),
                               decoration: BoxDecoration(
                                 color: dotColor,
                                 shape: BoxShape.circle,
@@ -670,7 +687,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                                 const SizedBox(height: 3),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                      horizontal: 7, vertical: 2),
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: badgeBg,
                                     borderRadius: BorderRadius.circular(10),
@@ -691,9 +710,9 @@ class _ClientAddEditState extends State<ClientAddEdit> {
                           height: 0,
                           thickness: 0.5,
                           indent: responsive!.scaleWidth(14),
-                          color: Theme.of(context)
-                              .dividerColor
-                              .withValues(alpha: 0.25),
+                          color: Theme.of(
+                            context,
+                          ).dividerColor.withValues(alpha: 0.25),
                         ),
                     ],
                   );

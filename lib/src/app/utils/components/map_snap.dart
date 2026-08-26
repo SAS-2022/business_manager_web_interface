@@ -1,15 +1,16 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 
+// Renders a LocationModel's Static Maps snapshot — a URL on web (see
+// LocationModel.snapshot), loaded via Image.network rather than
+// Image.memory since there are no raw bytes to hold here anymore.
 class MapSnapshotWidget extends StatelessWidget {
-  final Uint8List snapshotData;
+  final String snapshotUrl;
   final double height;
   final double width;
 
   const MapSnapshotWidget({
     super.key,
-    required this.snapshotData,
+    required this.snapshotUrl,
     this.height = 200,
     this.width = double.infinity,
   });
@@ -25,8 +26,8 @@ class MapSnapshotWidget extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
-        child: Image.memory(
-          snapshotData,
+        child: Image.network(
+          snapshotUrl,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) => Container(
             color: Colors.grey[200],

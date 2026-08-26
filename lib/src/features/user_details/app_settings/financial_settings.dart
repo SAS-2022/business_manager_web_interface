@@ -130,22 +130,23 @@ class _FinancialSettingsState extends State<FinancialSettings> {
                 child: FlushTextField(
                   controller: controller,
                   hintText: '0.0',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   fontSize: responsive!.scaleFont(13),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(6),
                   border: Border.all(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                 ),
@@ -180,8 +181,10 @@ class _FinancialSettingsState extends State<FinancialSettings> {
           actions: [
             if (changes != null && changes!)
               IconButton(
-                icon: Icon(Icons.save_outlined,
-                    size: responsive!.scaleHeight(22)),
+                icon: Icon(
+                  Icons.save_outlined,
+                  size: responsive!.scaleHeight(22),
+                ),
                 onPressed: () async => await saveData(),
               ),
           ],
@@ -205,8 +208,8 @@ class _FinancialSettingsState extends State<FinancialSettings> {
         if (usershot.hasError) {
           return Center(
             child: MyText(
-                text:
-                    errorClass.userNoTFoundError(e: usershot.error.toString())),
+              text: errorClass.userNoTFoundError(e: usershot.error.toString()),
+            ),
           );
         }
         if (usershot.connectionState == ConnectionState.waiting) {
@@ -264,24 +267,26 @@ class _FinancialSettingsState extends State<FinancialSettings> {
 
               // ── Tax settings ──────────────────────────────────────────
               _sectionLabel(appLoc!.taxDesc),
-              _groupCard(children: [
-                _taxRow(
-                  label: appLoc!.incomeTax,
-                  controller: incomeTaxController,
-                ),
-                _taxRow(
-                  label: appLoc!.salesTax,
-                  controller: salesTaxController,
-                ),
-                _taxRow(
-                  label: appLoc!.stateTax,
-                  controller: stateTaxController,
-                ),
-                _taxRow(
-                  label: appLoc!.governmentTax,
-                  controller: governmentTaxController,
-                ),
-              ]),
+              _groupCard(
+                children: [
+                  _taxRow(
+                    label: appLoc!.incomeTax,
+                    controller: incomeTaxController,
+                  ),
+                  _taxRow(
+                    label: appLoc!.salesTax,
+                    controller: salesTaxController,
+                  ),
+                  _taxRow(
+                    label: appLoc!.stateTax,
+                    controller: stateTaxController,
+                  ),
+                  _taxRow(
+                    label: appLoc!.governmentTax,
+                    controller: governmentTaxController,
+                  ),
+                ],
+              ),
 
               SizedBox(height: responsive!.scaleHeight(32)),
             ],
@@ -295,14 +300,18 @@ class _FinancialSettingsState extends State<FinancialSettings> {
 
   Future<UserDetails> fetchUser() async {
     UserDetails result = await db.getCurrentUser(uid: widget.uid);
-    incomeTaxController.text =
-        result.incomeTax == null ? '0.0' : result.incomeTax.toString();
-    salesTaxController.text =
-        result.salesTax == null ? '0.0' : result.salesTax.toString();
-    stateTaxController.text =
-        result.stateTax == null ? '0.0' : result.stateTax.toString();
-    governmentTaxController.text =
-        result.governmentTax == null ? '0.0' : result.governmentTax.toString();
+    incomeTaxController.text = result.incomeTax == null
+        ? '0.0'
+        : result.incomeTax.toString();
+    salesTaxController.text = result.salesTax == null
+        ? '0.0'
+        : result.salesTax.toString();
+    stateTaxController.text = result.stateTax == null
+        ? '0.0'
+        : result.stateTax.toString();
+    governmentTaxController.text = result.governmentTax == null
+        ? '0.0'
+        : result.governmentTax.toString();
     return result;
   }
 
@@ -318,23 +327,36 @@ class _FinancialSettingsState extends State<FinancialSettings> {
     }
   }
 
+  // Listeners mutated `changes`/`currentUser` fields directly without
+  // setState — the value did flip to true once data loaded (or the user
+  // typed), but the AppBar never rebuilt to actually show the save button,
+  // so it stayed invisible regardless.
   void addListeners() {
     incomeTaxController.addListener(() {
-      changes = true;
-      currentUser.incomeTax = double.tryParse(incomeTaxController.text) ?? 0.0;
+      setState(() {
+        changes = true;
+        currentUser.incomeTax =
+            double.tryParse(incomeTaxController.text) ?? 0.0;
+      });
     });
     salesTaxController.addListener(() {
-      changes = true;
-      currentUser.salesTax = double.tryParse(salesTaxController.text) ?? 0.0;
+      setState(() {
+        changes = true;
+        currentUser.salesTax = double.tryParse(salesTaxController.text) ?? 0.0;
+      });
     });
     stateTaxController.addListener(() {
-      changes = true;
-      currentUser.stateTax = double.tryParse(stateTaxController.text) ?? 0.0;
+      setState(() {
+        changes = true;
+        currentUser.stateTax = double.tryParse(stateTaxController.text) ?? 0.0;
+      });
     });
     governmentTaxController.addListener(() {
-      changes = true;
-      currentUser.governmentTax =
-          double.tryParse(governmentTaxController.text) ?? 0.0;
+      setState(() {
+        changes = true;
+        currentUser.governmentTax =
+            double.tryParse(governmentTaxController.text) ?? 0.0;
+      });
     });
   }
 }

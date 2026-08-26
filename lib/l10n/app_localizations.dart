@@ -2390,6 +2390,12 @@ abstract class AppLocalizations {
   /// **'Terms and Conditions'**
   String get termsandConditions;
 
+  /// No description provided for @termsIntroWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Please read and accept our Terms of Service before continuing.'**
+  String get termsIntroWeb;
+
   /// No description provided for @termsandConditionDesc.
   ///
   /// In en, this message translates to:

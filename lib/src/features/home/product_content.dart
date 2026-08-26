@@ -5,9 +5,7 @@ import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/models/product_model.dart';
 import 'package:business_manager_web_ui/src/services/database_service.dart';
 import 'package:business_manager_web_ui/src/services/product_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
@@ -47,14 +45,15 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
         if (recordsnap.hasError) {
           return Center(
             child: MyText(
-                text:
-                    errorClass.failedToGetRecords(recordsnap.error.toString())),
+              text: errorClass.failedToGetRecords(recordsnap.error.toString()),
+            ),
           );
         } else if (recordsnap.connectionState == ConnectionState.waiting) {
           return Center(
             child: LinearProgressIndicator(
-              color:
-                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.3),
               minHeight: responsive!.scaleHeight(2),
             ),
           );
@@ -72,9 +71,9 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
     final displayCount = records.length > 5 ? 5 : records.length;
     final maxQuantity = records.isNotEmpty
         ? records
-            .take(displayCount)
-            .map((r) => r.quantity ?? 0)
-            .reduce((a, b) => a > b ? a : b)
+              .take(displayCount)
+              .map((r) => r.quantity ?? 0)
+              .reduce((a, b) => a > b ? a : b)
         : 1.0;
 
     return Container(
@@ -103,7 +102,9 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
             final record = records[index];
             return FutureBuilder(
               future: ps.futureSingleProduct(
-                  userId: widget.uid, productId: record.id),
+                userId: widget.uid,
+                productId: record.id,
+              ),
               builder: (context, productshot) {
                 if (productshot.hasError || !productshot.hasData) {
                   return const SizedBox.shrink();
@@ -179,8 +180,9 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
           border: !isLast
               ? Border(
                   bottom: BorderSide(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.25),
                     width: 0.5,
                   ),
                 )
@@ -220,8 +222,9 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
                     child: LinearProgressIndicator(
                       value: ratio,
                       minHeight: 4,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
                       color: Colors.blue.withValues(alpha: 0.4 + 0.6 * ratio),
                     ),
                   ),
@@ -236,8 +239,10 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
               children: [
                 // Blue qty pill
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.blue.shade50,
                     borderRadius: BorderRadius.circular(10),
@@ -313,20 +318,24 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
                       return _shimmerBox();
                     }
                     if (imageshot.hasData) {
-                      return CachedNetworkImage(
-                        imageUrl: imageshot.data!.imageUrl!,
-                        cacheManager: CacheManager(
-                          Config(
-                            'customCacheKey',
-                            stalePeriod: const Duration(days: 7),
-                            maxNrOfCacheObjects: 100,
+                      // Image.network instead of CachedNetworkImage — the
+                      // latter fetches bytes over HTTP to cache them, which
+                      // needs CORS headers Firebase Storage doesn't send by
+                      // default and fails on web.
+                      return Image.network(
+                        imageshot.data!.imageUrl!,
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, progress) =>
+                            progress == null ? child : _shimmerBox(),
+                        errorBuilder: (context, error, stackTrace) => Center(
+                          child: Icon(
+                            Icons.image_not_supported_outlined,
+                            size: 20,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        placeholder: (_, __) => _shimmerBox(),
-                        errorWidget: (_, __, ___) => const Icon(
-                            Icons.image_not_supported_outlined,
-                            size: 20),
-                        fit: BoxFit.cover,
                       );
                     }
                     return Image.asset(
@@ -345,10 +354,7 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
           child: Container(
             width: 18,
             height: 18,
-            decoration: BoxDecoration(
-              color: badgeBg,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: badgeBg, shape: BoxShape.circle),
             alignment: Alignment.center,
             child: MyText(
               text: '$rank',
@@ -369,10 +375,11 @@ class _ProductContentScreenState extends State<ProductContentScreen> {
       duration: const Duration(milliseconds: 800),
       builder: (context, value, _) {
         return Container(
-          color: (Theme.of(context).brightness == Brightness.dark
-                  ? Colors.grey.shade700
-                  : Colors.grey.shade300)
-              .withValues(alpha: value),
+          color:
+              (Theme.of(context).brightness == Brightness.dark
+                      ? Colors.grey.shade700
+                      : Colors.grey.shade300)
+                  .withValues(alpha: value),
         );
       },
       onEnd: () => setState(() {}), // retriggers the animation

@@ -498,7 +498,7 @@ class _AccountSettingsState extends State<AccountSettings> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
                   child: MapSnapshotWidget(
-                    snapshotData: currentUser!.address!.snapshot!,
+                    snapshotUrl: currentUser!.address!.snapshot!,
                     height: responsive!.scaleHeight(100),
                     width: responsive!.scaleWidth(90),
                   ),

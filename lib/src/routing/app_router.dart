@@ -1,3 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:business_manager_web_ui/src/app/utils/services/location_picker.dart';
+import 'package:business_manager_web_ui/src/models/location_model.dart';
+import 'package:business_manager_web_ui/src/features/business/currency_location.dart';
+import 'package:business_manager_web_ui/src/features/terms_conditions/terms_page.dart';
 import 'package:business_manager_web_ui/src/features/auth/forgot_screen.dart';
 import 'package:business_manager_web_ui/src/features/auth/login_screen.dart';
 import 'package:business_manager_web_ui/src/features/auth/register_screen.dart';
@@ -30,12 +35,14 @@ import 'package:business_manager_web_ui/src/features/user_details/app_settings/g
 import 'package:business_manager_web_ui/src/features/user_details/app_settings/inventory_settings.dart';
 import 'package:business_manager_web_ui/src/features/user_details/app_settings/purchase_settings.dart';
 import 'package:business_manager_web_ui/src/features/user_details/app_settings/financial_settings.dart';
+import 'package:business_manager_web_ui/src/features/user_details/app_settings/invoice_settings.dart';
 import 'package:business_manager_web_ui/src/features/reports/sales_report.dart';
 import 'package:business_manager_web_ui/src/features/reports/inventory/inventory_report_variables.dart';
 import 'package:business_manager_web_ui/src/features/reports/profit_and_lost/pl_variables.dart';
 import 'package:business_manager_web_ui/src/features/reports/profit_and_lost/pl_summary.dart';
 import 'package:business_manager_web_ui/src/features/products/manufacturing/receipe_creation.dart';
 import 'package:business_manager_web_ui/src/features/payments/payment_view.dart';
+import 'package:business_manager_web_ui/src/features/payments/payment_add_edit.dart';
 import 'package:business_manager_web_ui/src/features/capital_and_expenses/routing_page.dart';
 import 'package:business_manager_web_ui/src/features/reports/reports_navigation.dart';
 import 'package:business_manager_web_ui/src/features/products/manufacturing/receipe_view.dart';
@@ -64,11 +71,7 @@ import 'package:go_router/go_router.dart';
 final goRouter = GoRouter(
   initialLocation: '/',
   routes: [
-    GoRoute(
-      name: '/',
-      path: '/',
-      builder: (context, state) => const Wrapper(),
-    ),
+    GoRoute(name: '/', path: '/', builder: (context, state) => const Wrapper()),
     ShellRoute(
       builder: (context, state, child) => AppShell(
         uid: state.pathParameters['uid'] ?? '',
@@ -150,7 +153,7 @@ final goRouter = GoRouter(
       name: 'currencyLocation',
       path: '/currencyLocation/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Currency & Location'),
+          CurrencyAndLocation(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'addProduct',
@@ -183,11 +186,6 @@ final goRouter = GoRouter(
         uid: state.pathParameters['uid'],
         productId: state.pathParameters['productId'],
       ),
-    ),
-    GoRoute(
-      name: 'receipeViewProduct',
-      path: '/receipeView/:uid/:productId',
-      builder: (context, state) => const RouteStubScreen(title: 'Recipe'),
     ),
     // Reached from Settings/Menu (once that's built) — the fuller order
     // list+search+filter+add, as opposed to the calendar-only Orders tab.
@@ -230,13 +228,11 @@ final goRouter = GoRouter(
         orderId: state.pathParameters['orderId'],
       ),
     ),
-    // Invoice settings screen isn't built yet — stubbed so the "Settings ›"
-    // link on OrderTerms' terms-and-conditions card doesn't crash.
     GoRoute(
       name: 'invoice_settings',
       path: '/invoice_settings/:uid',
       builder: (context, state) =>
-          const RouteStubScreen(title: 'Invoice Settings'),
+          InvoiceSettingsWidget(uid: state.pathParameters['uid']),
     ),
     // Clients feature isn't built yet — stubbed so the "add client" link
     // from OrderAddEdit's client typeahead empty-state doesn't crash.
@@ -270,26 +266,26 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'paymentView',
       path: '/paymentView/:uid',
-      builder: (context, state) => PaymentView(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          PaymentView(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'editPayment',
       path: '/editPayment/:uid/:paymentId',
-      builder: (context, state) => const RouteStubScreen(title: 'Payment'),
+      builder: (context, state) => PaymentAddEdit(
+        uid: state.pathParameters['uid'],
+        paymentId: state.pathParameters['paymentId'],
+      ),
     ),
     GoRoute(
       name: 'topProductsScreen',
       path: '/topProductsScreen/:uid',
-      builder: (context, state) =>
-          const RouteStubScreen(title: 'Top Products'),
+      builder: (context, state) => const RouteStubScreen(title: 'Top Products'),
     ),
     GoRoute(
       name: 'termsPage',
       path: '/termsPage/:uid',
-      builder: (context, state) =>
-          const RouteStubScreen(title: 'Terms of Use'),
+      builder: (context, state) => TermsPage(uid: state.pathParameters['uid']),
     ),
     // Settings/Menu destinations (Stage 12) — none of these sub-screens are
     // built yet; each gets its own future stage.
@@ -310,8 +306,10 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'MapLocationPicker',
       path: '/MapLocationPicker/:uid',
-      builder: (context, state) =>
-          const RouteStubScreen(title: 'Business Address'),
+      builder: (context, state) => MapViewWidget(
+        uid: state.pathParameters['uid'],
+        locationNotifier: state.extra as ValueNotifier<LocationModel>?,
+      ),
     ),
     GoRoute(
       name: 'app_settings',
@@ -323,30 +321,26 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'general_settings',
       path: '/general_settings/:uid',
-      builder: (context, state) => GeneralSettingsWidget(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          GeneralSettingsWidget(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'inventory_settings',
       path: '/inventory_settings/:uid',
-      builder: (context, state) => CreateInventory(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          CreateInventory(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'purchase_settings',
       path: '/purchase_settings/:uid',
-      builder: (context, state) => PurchaseSettings(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          PurchaseSettings(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'financial_settings',
       path: '/financial_settings/:uid',
-      builder: (context, state) => FinancialSettings(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          FinancialSettings(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'clientsView',
@@ -514,8 +508,7 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'viewAssets',
       path: '/viewAssets/:uid',
-      builder: (context, state) =>
-          AssetsView(uid: state.pathParameters['uid']),
+      builder: (context, state) => AssetsView(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'addAsset',
@@ -542,23 +535,20 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'salesReport',
       path: '/salesReport/:uid',
-      builder: (context, state) => SalesReport(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          SalesReport(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'inventoryReport',
       path: '/inventoryReport/:uid',
-      builder: (context, state) => InventoryReportVariables(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          InventoryReportVariables(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'plVariables',
       path: '/plVariables/:uid',
-      builder: (context, state) => PandLVariables(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          PandLVariables(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'plSummary',
@@ -567,8 +557,7 @@ final goRouter = GoRouter(
         uid: state.pathParameters['uid'],
         startDate: state.pathParameters['start'],
         endDate: state.pathParameters['end'],
-        selectedOptions:
-            state.extra as Map<String, Map<String, dynamic>>?,
+        selectedOptions: state.extra as Map<String, Map<String, dynamic>>?,
       ),
     ),
     GoRoute(
@@ -590,9 +579,8 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'receipeAdd',
       path: '/receipeAdd/:uid',
-      builder: (context, state) => ReceipeCreation(
-        uid: state.pathParameters['uid'],
-      ),
+      builder: (context, state) =>
+          ReceipeCreation(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'receipeEdit',
@@ -618,8 +606,7 @@ final goRouter = GoRouter(
     GoRoute(
       name: 'faq_add',
       path: '/faq_add/:uid',
-      builder: (context, state) =>
-          FaqEditAdd(uid: state.pathParameters['uid']),
+      builder: (context, state) => FaqEditAdd(uid: state.pathParameters['uid']),
     ),
     GoRoute(
       name: 'faq_edit',

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/debouncer.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
@@ -189,54 +190,70 @@ class _OrderViewState extends ConsumerState<OrderView>
   // ── Filter bar — LOGIC UNCHANGED ──────────────────────────────────────────
 
   Widget _buildFilterOptions() {
-    return Padding(
-      padding: responsive!.responsivePaddingHorM,
-      child: SizedBox(
-        height: responsive!.scaleHeight(50),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            if (selectedRange != null)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MyText(
-                      text:
-                          '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}'),
-                  MyText(
-                      text:
-                          '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}'),
-                ],
-              ),
-            const Spacer(),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: PeriodDropdown(
-                appLoc: appLoc!,
-                responsive: responsive!,
-                onPeriodChanged: onPeriodChanged,
-                selectedPeriod: period,
-              ),
+    // Align(topCenter), not Center — this sits inside a Stack, where
+    // Center expands to fill the whole Stack height (dictated by the much
+    // taller list below it) and re-centers vertically too, which is what
+    // pushed the filter row down into the middle of the page and behind
+    // the list's own layout box. topCenter keeps it pinned at the top,
+    // like before, just now width-capped and horizontally centered.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
+        ),
+        child: Padding(
+          padding: responsive!.responsivePaddingHorM,
+          child: SizedBox(
+            height: responsive!.scaleHeight(50),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                if (selectedRange != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      MyText(
+                        text:
+                            '${appLoc!.start}: ${selectedRange!.start.day}/${selectedRange!.start.month}/${selectedRange!.start.year}',
+                      ),
+                      MyText(
+                        text:
+                            '${appLoc!.end}: ${selectedRange!.end.day}/${selectedRange!.end.month}/${selectedRange!.end.year}',
+                      ),
+                    ],
+                  ),
+                const Spacer(),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: PeriodDropdown(
+                    appLoc: appLoc!,
+                    responsive: responsive!,
+                    onPeriodChanged: onPeriodChanged,
+                    selectedPeriod: period,
+                  ),
+                ),
+                Padding(
+                  padding: responsive!.responsivePaddingRight,
+                  child: GestureDetector(
+                    onTap: () => _selectDateRange(context),
+                    child: const Icon(Icons.calendar_month),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      start = end = null;
+                      selectedRange = null;
+                    });
+                  },
+                  child: const Icon(Icons.clear_all),
+                ),
+              ],
             ),
-            Padding(
-              padding: responsive!.responsivePaddingRight,
-              child: GestureDetector(
-                onTap: () => _selectDateRange(context),
-                child: const Icon(Icons.calendar_month),
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  start = end = null;
-                  selectedRange = null;
-                });
-              },
-              child: const Icon(Icons.clear_all),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -250,24 +267,33 @@ class _OrderViewState extends ConsumerState<OrderView>
         ? _filterOrders(currentOrders, searchController.text)
         : currentOrders;
 
-    return Column(
-      children: [
-        SizedBox(height: responsive!.screenHeight * 0.05),
-        SizedBox(
-          height: responsive!.screenHeight * 0.765,
-          child: filteredOrders.isNotEmpty
-              ? Padding(
-                  padding: responsive!.responsivePaddingBottom,
-                  child: _buildAnimatedOrderList(),
-                )
-              : Center(
-                  child: MyText(
-                    text: appLoc!.noOrdersFound,
-                    fontScale: responsive!.scaleFont(15),
-                  ),
-                ),
+    // Align(topCenter) for the same reason as _buildFilterOptions() above.
+    return Align(
+      alignment: Alignment.topCenter,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.maxCatalogWidth,
         ),
-      ],
+        child: Column(
+          children: [
+            SizedBox(height: responsive!.screenHeight * 0.05),
+            SizedBox(
+              height: responsive!.screenHeight * 0.765,
+              child: filteredOrders.isNotEmpty
+                  ? Padding(
+                      padding: responsive!.responsivePaddingBottom,
+                      child: _buildAnimatedOrderList(),
+                    )
+                  : Center(
+                      child: MyText(
+                        text: appLoc!.noOrdersFound,
+                        fontScale: responsive!.scaleFont(15),
+                      ),
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -324,8 +350,10 @@ class _OrderViewState extends ConsumerState<OrderView>
       child: GestureDetector(
         onTap: () {
           if (currentOrders[index].uid != null) {
-            GoRouter.of(context).pushNamed('editOrder',
-                pathParameters: {'uid': widget.uid!, 'orderId': order.uid!});
+            GoRouter.of(context).pushNamed(
+              'editOrder',
+              pathParameters: {'uid': widget.uid!, 'orderId': order.uid!},
+            );
           }
         },
         child: Dismissible(
@@ -336,22 +364,19 @@ class _OrderViewState extends ConsumerState<OrderView>
             padding: responsive!.responsivePaddingRight,
             decoration: BoxDecoration(
               color: isCancelled
-                  ? Theme.of(context)
-                      .colorScheme
-                      .onPrimaryFixed
-                      .withValues(alpha: 0.12)
+                  ? Theme.of(
+                      context,
+                    ).colorScheme.onPrimaryFixed.withValues(alpha: 0.12)
                   : Theme.of(context).colorScheme.error.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: isCancelled
-                    ? Theme.of(context)
-                        .colorScheme
-                        .onPrimaryFixed
-                        .withValues(alpha: 0.4)
-                    : Theme.of(context)
-                        .colorScheme
-                        .error
-                        .withValues(alpha: 0.4),
+                    ? Theme.of(
+                        context,
+                      ).colorScheme.onPrimaryFixed.withValues(alpha: 0.4)
+                    : Theme.of(
+                        context,
+                      ).colorScheme.error.withValues(alpha: 0.4),
                 width: 0.5,
               ),
             ),
@@ -383,13 +408,17 @@ class _OrderViewState extends ConsumerState<OrderView>
             }
           },
           onDismissed: (direction) {
-            final currentIndex = filteredOrders
-                .indexWhere((o) => o.uid == filteredOrders[index].uid);
+            final currentIndex = filteredOrders.indexWhere(
+              (o) => o.uid == filteredOrders[index].uid,
+            );
             if (currentIndex != -1) {
               if (order.invoiceUrl != null &&
                   order.status != constStrings.cancel) {
                 _cancelOrderInPlace(
-                    index, filteredOrders[index], constStrings.cancel);
+                  index,
+                  filteredOrders[index],
+                  constStrings.cancel,
+                );
               } else {
                 _removeOrder(index);
               }
@@ -404,10 +433,9 @@ class _OrderViewState extends ConsumerState<OrderView>
               border: Border.all(
                 color: isCancelled
                     ? Colors.grey.shade400
-                    : Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.25),
+                    : Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.25),
                 width: 0.8,
               ),
             ),
@@ -477,9 +505,9 @@ class _OrderViewState extends ConsumerState<OrderView>
                                   text:
                                       '${(order.orderedProducts ?? {}).length} ${appLoc!.product}',
                                   fontScale: responsive!.scaleFont(11),
-                                  fontColor: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  fontColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                                 const Spacer(),
                                 _checkOrderState(currentOrders[index]),
@@ -489,9 +517,9 @@ class _OrderViewState extends ConsumerState<OrderView>
                                     text:
                                         '${order.scheduledDate?.day}/${order.scheduledDate?.month}/${order.scheduledDate?.year}',
                                     fontScale: responsive!.scaleFont(11),
-                                    fontColor: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
+                                    fontColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
                                   ),
                               ],
                             ),
@@ -511,7 +539,8 @@ class _OrderViewState extends ConsumerState<OrderView>
                         alignment: Alignment.center,
                         child: Container(
                           decoration: BoxDecoration(
-                              border: Border.all(color: Colors.red)),
+                            border: Border.all(color: Colors.red),
+                          ),
                           child: Padding(
                             padding: responsive!.responsivePaddingES,
                             child: MyText(
@@ -545,8 +574,9 @@ class _OrderViewState extends ConsumerState<OrderView>
         height: h,
         width: w,
         decoration: BoxDecoration(
-            color: Colors.green.shade600,
-            borderRadius: BorderRadius.circular(20)),
+          color: Colors.green.shade600,
+          borderRadius: BorderRadius.circular(20),
+        ),
         child: Center(
           child: MyText(
             text: appLoc!.invoiced,
@@ -562,8 +592,9 @@ class _OrderViewState extends ConsumerState<OrderView>
       height: h,
       width: w,
       decoration: BoxDecoration(
-          color: Colors.amber.shade600,
-          borderRadius: BorderRadius.circular(20)),
+        color: Colors.amber.shade600,
+        borderRadius: BorderRadius.circular(20),
+      ),
       child: Center(
         child: MyText(
           text: appLoc!.draft,
@@ -646,16 +677,12 @@ class _OrderViewState extends ConsumerState<OrderView>
       padding: EdgeInsets.only(bottom: responsive!.scaleHeight(40)),
       child: FloatingActionButton(
         onPressed: () {
-          GoRouter.of(context).pushNamed(
-            'addOrder',
-            pathParameters: {'uid': widget.uid!},
-          );
+          GoRouter.of(
+            context,
+          ).pushNamed('addOrder', pathParameters: {'uid': widget.uid!});
         },
         backgroundColor: Theme.of(context).colorScheme.secondaryFixed,
-        child: Icon(
-          Icons.add,
-          size: responsive!.scaleWidth(35),
-        ),
+        child: Icon(Icons.add, size: responsive!.scaleWidth(35)),
       ),
     );
   }
@@ -690,18 +717,15 @@ class _OrderViewState extends ConsumerState<OrderView>
   }
 
   void _prepareAnimations() {
-    _itemAnimations = List.generate(
-      filteredOrders.length,
-      (index) {
-        final beginValue = (0.1 * index).clamp(0.0, 1.0);
-        return Tween<double>(begin: 0, end: 1).animate(
-          CurvedAnimation(
-            parent: _listAnimationController,
-            curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
-          ),
-        );
-      },
-    );
+    _itemAnimations = List.generate(filteredOrders.length, (index) {
+      final beginValue = (0.1 * index).clamp(0.0, 1.0);
+      return Tween<double>(begin: 0, end: 1).animate(
+        CurvedAnimation(
+          parent: _listAnimationController,
+          curve: Interval(beginValue, 1.0, curve: Curves.easeOutCubic),
+        ),
+      );
+    });
     _animationDebouncer.run(() {
       if (mounted && _listAnimationController.isAnimating == false) {
         _listAnimationController.forward(from: 0);
@@ -735,7 +759,10 @@ class _OrderViewState extends ConsumerState<OrderView>
   }
 
   Future<void> _cancelOrderInPlace(
-      int index, Orders order, String status) async {
+    int index,
+    Orders order,
+    String status,
+  ) async {
     if (index < 0 || index >= filteredOrders.length) return;
     if (filteredOrders[index].uid == null || widget.uid == null) return;
     setState(() => isLoading = true);
@@ -750,7 +777,9 @@ class _OrderViewState extends ConsumerState<OrderView>
               var key = item.key;
               var val = item.value;
               var product = await ps.futureSingleProduct(
-                  userId: widget.uid, productId: key);
+                userId: widget.uid,
+                productId: key,
+              );
               if (product.inventory != null &&
                   product.inventory![order.storeLocation] != null) {
                 if (status == constStrings.cancel) {
@@ -774,14 +803,20 @@ class _OrderViewState extends ConsumerState<OrderView>
               var key = item.key;
               var val = item.value;
               var product = await ps.futureSingleProduct(
-                  userId: widget.uid, productId: key);
+                userId: widget.uid,
+                productId: key,
+              );
               var receipe = await ps.futureSingleReceipe(
-                  userId: widget.uid!, receipeId: product.receipeId!);
+                userId: widget.uid!,
+                receipeId: product.receipeId!,
+              );
               if (receipe.ingredients != null &&
                   receipe.ingredients!.isNotEmpty) {
                 for (var ingredient in receipe.ingredients!) {
                   var rawItem = await ps.futureSingleRawItem(
-                      userId: widget.uid!, rawItemId: ingredient.uid!);
+                    userId: widget.uid!,
+                    rawItemId: ingredient.uid!,
+                  );
                   if (rawItem.inventory != null &&
                       rawItem.inventory!.isNotEmpty &&
                       rawItem.inventory!.containsKey(order.storeLocation)) {
@@ -790,7 +825,8 @@ class _OrderViewState extends ConsumerState<OrderView>
                     if (ingredient.unit?.toLowerCase() !=
                         rawItem.unit?.toLowerCase()) {
                       var convertedRate = rawItem
-                          .conversion![ingredient.unit?.toLowerCase()]?.rate;
+                          .conversion![ingredient.unit?.toLowerCase()]
+                          ?.rate;
                       var originalRate = ingredient.quantity! / convertedRate!;
                       ingredient.quantity = originalRate * val.quantity!;
                     }
@@ -821,17 +857,24 @@ class _OrderViewState extends ConsumerState<OrderView>
           for (var id in productIds) {
             if (order.status == constStrings.cancel) {
               if (await ps.checkIfProductRecordExist(
-                  widget.uid!, id, order.uid!)) {
+                widget.uid!,
+                id,
+                order.uid!,
+              )) {
                 await ps.deleteProductRecord(widget.uid!, id, order.uid!);
               }
             } else {
               if (!await ps.checkIfProductRecordExist(
-                  widget.uid!, id, order.uid!)) {
+                widget.uid!,
+                id,
+                order.uid!,
+              )) {
                 await ps.updateProductRecord(
-                    userId: widget.uid,
-                    productId: id,
-                    orderId: order.uid,
-                    product: order.orderedProducts![id]);
+                  userId: widget.uid,
+                  productId: id,
+                  orderId: order.uid,
+                  product: order.orderedProducts![id],
+                );
               }
             }
           }
@@ -840,9 +883,15 @@ class _OrderViewState extends ConsumerState<OrderView>
       await os.editOrder(uid: widget.uid, order: order);
       if (order.status == constStrings.cancel) {
         if (await cs.recordExists(
-            uid: widget.uid!, clientId: order.clientId, recordId: order.uid)) {
+          uid: widget.uid!,
+          clientId: order.clientId,
+          recordId: order.uid,
+        )) {
           await cs.deleteStatementRecord(
-              uid: widget.uid, clientId: order.clientId, recordId: order.uid);
+            uid: widget.uid,
+            clientId: order.clientId,
+            recordId: order.uid,
+          );
         }
       } else {
         double orderValue = 0.0;
@@ -850,12 +899,16 @@ class _OrderViewState extends ConsumerState<OrderView>
           orderValue += (product.quantity ?? 0.0) * (product.price ?? 0.0);
         }
         StatementRecord sRecord = StatementRecord(
-            entryDate: DateTime.now(),
-            type: 'debit',
-            recordId: order.uid,
-            value: orderValue);
+          entryDate: DateTime.now(),
+          type: 'debit',
+          recordId: order.uid,
+          value: orderValue,
+        );
         await cs.setRecord(
-            uid: widget.uid, clientId: order.clientId, record: sRecord);
+          uid: widget.uid,
+          clientId: order.clientId,
+          record: sRecord,
+        );
       }
     } on Exception catch (e, s) {
       if (mounted) setState(() => isLoading = false);
@@ -864,8 +917,12 @@ class _OrderViewState extends ConsumerState<OrderView>
           : appLoc!.failedToRestoreOrder;
       snackbarWidget.time = 5;
       snackbarWidget.showSnack();
-      ErrorLoggingService.instance
-          .recordError(e, s, fatal: false, printDetails: true);
+      ErrorLoggingService.instance.recordError(
+        e,
+        s,
+        fatal: false,
+        printDetails: true,
+      );
     }
     if (mounted) setState(() => isLoading = false);
   }
@@ -900,8 +957,10 @@ class _OrderViewState extends ConsumerState<OrderView>
   }
 
   Future<void> onPeriodChanged(String selectedPeriod) async {
-    final range =
-        DateRangeHelper.getDateRangeFromString(selectedPeriod, appLoc);
+    final range = DateRangeHelper.getDateRangeFromString(
+      selectedPeriod,
+      appLoc,
+    );
     setState(() {
       period = selectedPeriod;
       selectedRange = DateTimeRange(

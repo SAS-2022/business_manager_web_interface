@@ -6,9 +6,7 @@ import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
 import 'package:business_manager_web_ui/src/models/product_model.dart';
 import 'package:business_manager_web_ui/src/services/storage_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_cache_manager/flutter_cache_manager.dart' as cache;
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../app/constants/error_class.dart';
@@ -175,14 +173,14 @@ class _ViewGalleryState extends State<ViewGallery>
               vertical: responsive!.scaleHeight(10),
             ),
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.07),
+              color: Theme.of(
+                context,
+              ).colorScheme.primary.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .primary
-                    .withValues(alpha: 0.2),
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.2),
                 width: 0.5,
               ),
             ),
@@ -221,100 +219,128 @@ class _ViewGalleryState extends State<ViewGallery>
                   );
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(
-                    child: MyText(text: appLoc!.noImages),
-                  );
+                  return Center(child: MyText(text: appLoc!.noImages));
                 }
                 final images = snapshot.data!;
 
-                return GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: responsive!.scaleWidth(6),
-                    mainAxisSpacing: responsive!.scaleHeight(6),
-                  ),
-                  itemCount: images.length,
-                  itemBuilder: (context, index) {
-                    final image = images[index];
-                    final isSelected = selectedImages.contains(image.uid);
-                    return GestureDetector(
-                      onDoubleTap: () {
-                        if (!isSelectionMode) {
-                          GoRouter.of(context).pop(image.uid);
-                        }
-                      },
-                      onTap: () {
-                        if (isSelectionMode) {
-                          setState(() {
-                            if (isSelected) {
-                              selectedImages.remove(image.uid);
-                            } else {
-                              selectedImages.add(image.uid!);
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Columns scale with available width instead of a
+                    // fixed 3 — on a wide screen a fixed count let each
+                    // thumbnail's cell stretch into a huge square tile.
+                    const thumbnailTargetWidth = 150.0;
+                    final columns =
+                        (constraints.maxWidth / thumbnailTargetWidth)
+                            .floor()
+                            .clamp(1, 100);
+
+                    return GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        crossAxisSpacing: responsive!.scaleWidth(6),
+                        mainAxisSpacing: responsive!.scaleHeight(6),
+                      ),
+                      itemCount: images.length,
+                      itemBuilder: (context, index) {
+                        final image = images[index];
+                        final isSelected = selectedImages.contains(image.uid);
+                        return GestureDetector(
+                          onDoubleTap: () {
+                            if (!isSelectionMode) {
+                              GoRouter.of(context).pop(image.uid);
                             }
-                          });
-                        } else {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) {
-                              return PhotoViewerScreen(
-                                uid: widget.uid,
-                                imageUrls:
-                                    images.map((e) => e.imageUrl!).toList(),
-                                initialIndex: index,
-                                images: images[index],
-                                showAddButton: widget.showAddButton ?? false,
-                                imagesList: images,
-                              );
-                            }),
-                          );
-                        }
-                      },
-                      onLongPress: () {
-                        setState(() {
-                          isSelectionMode = true;
-                          selectedImages.add(image.uid!);
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          border: isSelected
-                              ? Border.all(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 2.5,
-                                )
-                              : Border.all(
-                                  color: Theme.of(context)
-                                      .dividerColor
-                                      .withValues(alpha: 0.2),
-                                  width: 0.5,
+                          },
+                          onTap: () {
+                            if (isSelectionMode) {
+                              setState(() {
+                                if (isSelected) {
+                                  selectedImages.remove(image.uid);
+                                } else {
+                                  selectedImages.add(image.uid!);
+                                }
+                              });
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) {
+                                    return PhotoViewerScreen(
+                                      uid: widget.uid,
+                                      imageUrls: images
+                                          .map((e) => e.imageUrl!)
+                                          .toList(),
+                                      initialIndex: index,
+                                      images: images[index],
+                                      showAddButton:
+                                          widget.showAddButton ?? false,
+                                      imagesList: images,
+                                    );
+                                  },
                                 ),
-                        ),
-                        child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(isSelected ? 8 : 9),
-                          child: Transform.scale(
-                            scale: isSelected ? 0.94 : 1.0,
-                            child: CachedNetworkImage(
-                              width: responsive!.screenWidth * 0.33,
-                              imageUrl: images[index].imageUrl!,
-                              cacheManager: cache.CacheManager(
-                                cache.Config(
-                                  'customCacheKey',
-                                  stalePeriod: const Duration(days: 7),
-                                  maxNrOfCacheObjects: 100,
+                              );
+                            }
+                          },
+                          onLongPress: () {
+                            setState(() {
+                              isSelectionMode = true;
+                              selectedImages.add(image.uid!);
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              borderRadius: BorderRadius.circular(10),
+                              border: isSelected
+                                  ? Border.all(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      width: 2.5,
+                                    )
+                                  : Border.all(
+                                      color: Theme.of(
+                                        context,
+                                      ).dividerColor.withValues(alpha: 0.2),
+                                      width: 0.5,
+                                    ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                isSelected ? 8 : 9,
+                              ),
+                              child: Transform.scale(
+                                scale: isSelected ? 0.94 : 1.0,
+                                // Image.network instead of CachedNetworkImage —
+                                // the latter fetches bytes over HTTP to cache
+                                // them, which needs CORS headers Firebase
+                                // Storage doesn't send by default and fails on
+                                // web.
+                                child: Image.network(
+                                  images[index].imageUrl!,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder: (context, child, progress) =>
+                                      progress == null
+                                      ? child
+                                      : const GradientSkeleton(),
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      Center(
+                                        child: Icon(
+                                          Icons.broken_image_outlined,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
                                 ),
                               ),
-                              placeholder: (context, url) =>
-                                  const GradientSkeleton(),
-                              errorWidget: (context, url, error) =>
-                                  const Icon(Icons.broken_image_outlined),
-                              fit: BoxFit.cover,
                             ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     );
                   },
                 );
@@ -425,8 +451,10 @@ class _ViewGalleryState extends State<ViewGallery>
 
     try {
       for (var imageUid in selectedImages) {
-        final imageToDelete =
-            await ps.futureSingleImage(userId: widget.uid!, imageId: imageUid);
+        final imageToDelete = await ps.futureSingleImage(
+          userId: widget.uid!,
+          imageId: imageUid,
+        );
         if (imageToDelete != null && imageToDelete.uid != null) {
           await ps.deleteImage(widget.uid!, imageToDelete);
           deletedCount++;

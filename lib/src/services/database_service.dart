@@ -28,9 +28,14 @@ class DatabaseService {
   //update a user
   Future<String> updateCurrentUser({UserDetails? user}) async {
     try {
+      // set+merge instead of update: getCurrentUser() already treats a
+      // missing doc as a valid state (returns an empty UserDetails so
+      // onboarding can proceed), so this has to be able to create the doc
+      // too — update() throws not-found for any account whose doc was
+      // never created (e.g. pre-dates the auto-create-on-signup logic).
       return await userCollection
           .doc(user!.uid)
-          .update(user.toMap())
+          .set(user.toMap(), SetOptions(merge: true))
           .then((value) => 'success');
     } catch (e) {
       throw Exception(e);

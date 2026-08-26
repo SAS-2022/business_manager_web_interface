@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// A minimal, borderless text field designed specifically for use
 /// inside a grouped container (like the login screen).
@@ -33,19 +34,46 @@ class FlushTextField extends StatefulWidget {
 class _FlushTextFieldState extends State<FlushTextField> {
   bool _obscure = true;
 
+  // A numeric/phone keyboardType only ever picked the on-screen keyboard
+  // shown on mobile — the OS numeric/phone keypad has no letter keys, so
+  // nothing actually needed to filter input. A physical web keyboard has
+  // no such limit, so every "numbers only" field (including phone number
+  // fields, which use TextInputType.phone rather than .number) silently
+  // accepted plain text. Deriving the formatter from the keyboardType
+  // already passed in fixes every current and future numeric/phone
+  // FlushTextField without each caller needing to remember to add one.
+  List<TextInputFormatter>? get _numericFormatters {
+    final type = widget.keyboardType;
+    if (type == null) return null;
+    if (type.index == TextInputType.phone.index) {
+      // Country code is handled by a separate picker at these call
+      // sites — the field itself is just the local subscriber number.
+      return [FilteringTextInputFormatter.allow(RegExp(r'^[0-9]*$'))];
+    }
+    if (type.index != TextInputType.number.index) return null;
+    final pattern = type.decimal == true
+        ? (type.signed == true ? r'^-?[0-9]*\.?[0-9]*$' : r'^[0-9]*\.?[0-9]*$')
+        : (type.signed == true ? r'^-?[0-9]*$' : r'^[0-9]*$');
+    return [FilteringTextInputFormatter.allow(RegExp(pattern))];
+  }
+
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: widget.controller,
       obscureText: widget.isPassword && _obscure,
       keyboardType: widget.keyboardType,
+      inputFormatters: _numericFormatters,
       textCapitalization: widget.textCapitalization,
       maxLength: widget.maxLength,
       maxLines: widget.lines ?? 1,
       buildCounter: widget.maxLength != null
-          ? (context,
-                  {required currentLength, required isFocused, maxLength}) =>
-              null
+          ? (
+              context, {
+              required currentLength,
+              required isFocused,
+              maxLength,
+            }) => null
           : null,
       style: TextStyle(
         fontSize: widget.fontSize,

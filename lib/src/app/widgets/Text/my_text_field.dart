@@ -7,35 +7,36 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 class MyTextField extends StatefulWidget {
-  const MyTextField(
-      {super.key,
-      required this.controller,
-      this.hintText,
-      this.obsecure,
-      this.emailValidation,
-      this.stringEmpty,
-      this.passValidation,
-      this.isPassword,
-      this.isString,
-      this.fontSize,
-      this.prefix,
-      this.prefixIcon,
-      this.suffix,
-      this.lines,
-      this.enabled,
-      this.center,
-      this.maxLenght,
-      this.height,
-      this.focus,
-      this.capitalize,
-      this.itemOriginalPrice,
-      this.items,
-      this.bgColor,
-      this.focusNode,
-      this.isNumberKeyboard,
-      this.signed,
-      this.onChanged,
-      this.enabledBorders});
+  const MyTextField({
+    super.key,
+    required this.controller,
+    this.hintText,
+    this.obsecure,
+    this.emailValidation,
+    this.stringEmpty,
+    this.passValidation,
+    this.isPassword,
+    this.isString,
+    this.fontSize,
+    this.prefix,
+    this.prefixIcon,
+    this.suffix,
+    this.lines,
+    this.enabled,
+    this.center,
+    this.maxLenght,
+    this.height,
+    this.focus,
+    this.capitalize,
+    this.itemOriginalPrice,
+    this.items,
+    this.bgColor,
+    this.focusNode,
+    this.isNumberKeyboard,
+    this.signed,
+    this.onChanged,
+    this.enabledBorders,
+  });
   final TextEditingController controller;
   final String? hintText;
   final bool? obsecure;
@@ -98,8 +99,9 @@ class _MyTextFieldState extends State<MyTextField> {
         key: widget.key,
         focusNode: widget.focusNode,
         controller: widget.controller,
-        scrollPadding:
-            EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+        scrollPadding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
         enabled: widget.enabled ?? true,
         maxLength: widget.maxLenght,
         autofocus: widget.focus ?? false,
@@ -114,15 +116,28 @@ class _MyTextFieldState extends State<MyTextField> {
         maxLines: widget.lines ?? 1,
         keyboardType:
             widget.isNumberKeyboard != null && widget.isNumberKeyboard!
-                ? TextInputType.numberWithOptions(
-                    signed: widget.signed ?? false, decimal: true)
-                : null,
-        inputFormatters: widget.isString != null && !widget.isString!
+            ? TextInputType.numberWithOptions(
+                signed: widget.signed ?? false,
+                decimal: true,
+              )
+            : null,
+        // isNumberKeyboard alone used to only swap the on-screen keyboard
+        // hint — real character filtering needed a separate isString:false
+        // that nothing actually passed. That's invisible on mobile (the
+        // OS numeric keypad has no letter keys to press), but a physical
+        // web keyboard has no such limit, so every "numbers only" field
+        // silently accepted plain text. isNumberKeyboard now restricts
+        // input on its own; isString:false still works too, for any
+        // caller that wants the filter without the numeric keyboard hint.
+        inputFormatters:
+            (widget.isNumberKeyboard ?? false) ||
+                (widget.isString != null && !widget.isString!)
             ? [
                 FilteringTextInputFormatter.allow(
-                    widget.signed != null && widget.signed!
-                        ? numberPatternWithNeg
-                        : numberPattern)
+                  widget.signed != null && widget.signed!
+                      ? numberPatternWithNeg
+                      : numberPattern,
+                ),
               ]
             : null,
         decoration: InputDecoration(
@@ -135,16 +150,26 @@ class _MyTextFieldState extends State<MyTextField> {
           //       )
           //     : null,
           errorStyle: TextStyle(
-              fontSize: responsive!.scaleFont(widget.fontSize ?? 12) * 0.6),
-          fillColor: widget.bgColor ?? Colors.white,
+            fontSize: responsive!.scaleFont(widget.fontSize ?? 12) * 0.6,
+          ),
+          // filled wasn't set, so fillColor was silently ignored — fields
+          // just showed whatever card/background sat behind them, with a
+          // heavy black outlined box on top of that. Filling with white
+          // gives each field a clean surface of its own against a grey
+          // card background instead of a "box inside a box" look — unless
+          // enabledBorders:false was chosen specifically to blend into a
+          // card seamlessly, in which case a white fill would defeat the
+          // point by drawing its own box anyway.
+          filled: true,
+          fillColor:
+              widget.bgColor ??
+              (widget.enabledBorders == false
+                  ? Colors.transparent
+                  : Colors.white),
           isDense: true,
           isCollapsed: false,
           contentPadding: responsive!.responsivePaddingM,
-          suffix: widget.suffix != null
-              ? Text(
-                  widget.suffix!,
-                )
-              : null,
+          suffix: widget.suffix != null ? Text(widget.suffix!) : null,
           prefix: Text('${widget.prefix ?? ''} '),
           prefixIcon: widget.prefixIcon != null
               ? Icon(
@@ -153,47 +178,56 @@ class _MyTextFieldState extends State<MyTextField> {
                   color: Theme.of(context).colorScheme.primary,
                 )
               : null,
+          // Was colorScheme.primary (black) at rest — a heavy, harsh
+          // outline on every field in the app. A subtle divider-toned
+          // border reads as a normal input instead of an alert box.
           enabledBorder:
               widget.enabledBorders != null && widget.enabledBorders == false
-                  ? InputBorder.none
-                  : OutlineInputBorder(
-                      gapPadding: 1,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.primary,
-                        width: 0.5,
-                      ),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-          border:
-              widget.enabledBorders != null && widget.enabledBorders == false
-                  ? InputBorder.none
-                  : OutlineInputBorder(
-                      gapPadding: 1,
-                      borderRadius: BorderRadius.circular(5),
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.secondary,
-                        width: 0.5,
-                      ),
-                    ),
-          errorBorder: widget.enabledBorders != null &&
-                  widget.enabledBorders == false
               ? InputBorder.none
               : OutlineInputBorder(
-                  borderSide:
-                      BorderSide(color: Theme.of(context).colorScheme.error),
-                  borderRadius: BorderRadius.circular(10),
+                  gapPadding: 1,
+                  borderSide: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
+                    width: 0.5,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-          focusedBorder:
+          border:
               widget.enabledBorders != null && widget.enabledBorders == false
-                  ? InputBorder.none
-                  : OutlineInputBorder(
-                      gapPadding: 1,
-                      borderSide: BorderSide(
-                        color: Theme.of(context).colorScheme.secondaryFixed,
-                        width: 1.5,
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+              ? InputBorder.none
+              : OutlineInputBorder(
+                  gapPadding: 1,
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
+                    width: 0.5,
+                  ),
+                ),
+          errorBorder:
+              widget.enabledBorders != null && widget.enabledBorders == false
+              ? InputBorder.none
+              : OutlineInputBorder(
+                  borderSide: BorderSide(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+          // enabledBorders:false means "no box at rest" (for a field that
+          // already sits in a bordered/divided card and doesn't need its
+          // own outline) — it should never mean "no focus indicator at
+          // all", or there'd be zero visual feedback while editing.
+          focusedBorder: OutlineInputBorder(
+            gapPadding: 1,
+            borderSide: BorderSide(
+              color: Theme.of(context).colorScheme.secondaryFixed,
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(8),
+          ),
           hintText: widget.hintText,
           //for obsecuring password and showing it
           suffixIcon: widget.isPassword != null && widget.isPassword!
@@ -204,7 +238,8 @@ class _MyTextFieldState extends State<MyTextField> {
                     });
                   },
                   icon: Icon(
-                      !isObsecure! ? Icons.visibility : Icons.visibility_off),
+                    !isObsecure! ? Icons.visibility : Icons.visibility_off,
+                  ),
                   color: Theme.of(context).iconTheme.color,
                 )
               : null,
@@ -245,9 +280,7 @@ class _MyTextFieldState extends State<MyTextField> {
             nc.formatNumber(widget.controller);
           }
         },
-        style: TextStyle(
-          fontSize: widget.fontSize ?? 12,
-        ),
+        style: TextStyle(fontSize: widget.fontSize ?? 12),
       ),
     );
   }

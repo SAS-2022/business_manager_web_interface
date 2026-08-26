@@ -4,6 +4,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/neumorphic_toggle.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
@@ -168,20 +169,20 @@ class _QuoteTermsState extends State<QuoteTerms> {
       child: Row(
         children: [
           Expanded(
-            child: MyText(
-              text: label,
-              fontScale: responsive!.scaleFont(13),
-            ),
+            child: MyText(text: label, fontScale: responsive!.scaleFont(13)),
           ),
           SizedBox(width: responsive!.scaleWidth(3)),
-          SizedBox(
-            width: responsive!.screenWidth * 0.6,
+          // Was a fixed 60% of the full screen width — overflows once this
+          // row sits in a capped-width container. Expanded matches
+          // whatever width it's actually given instead.
+          Expanded(
             child: MyText(
               text: value,
               fontScale: responsive!.scaleFont(13),
               fontWeight: FontWeight.w500,
               softWrap: true,
               maxLines: 2,
+              align: TextAlign.end,
             ),
           ),
         ],
@@ -233,7 +234,10 @@ class _QuoteTermsState extends State<QuoteTerms> {
                         quote.deliveryTerms != deliveryController.text ||
                         quote.returnTerms != returnController.text) {
                       var result = await warningDialog.showWarningDialog(
-                          context, appLoc!, appLoc!.unsavedData);
+                        context,
+                        appLoc!,
+                        appLoc!.unsavedData,
+                      );
                       if (result) {
                         // ignore: use_build_context_synchronously
                         NavigationHelper.resetToHome(context, widget.uid!);
@@ -264,7 +268,8 @@ class _QuoteTermsState extends State<QuoteTerms> {
                   return Center(
                     child: MyText(
                       text: errorClass.userNoTFoundError(
-                          e: usershot.error.toString()),
+                        e: usershot.error.toString(),
+                      ),
                     ),
                   );
                 } else if (usershot.connectionState ==
@@ -320,9 +325,7 @@ class _QuoteTermsState extends State<QuoteTerms> {
       future: getCurrentQuote,
       builder: (context, ordershot) {
         if (ordershot.hasError) {
-          return Center(
-            child: MyText(text: errorClass.ordersNotLoading()),
-          );
+          return Center(child: MyText(text: errorClass.ordersNotLoading()));
         } else if (ordershot.connectionState == ConnectionState.waiting) {
           return const GradientSkeleton();
         } else {
@@ -342,25 +345,33 @@ class _QuoteTermsState extends State<QuoteTerms> {
               top: responsive!.scaleHeight(12),
               bottom: responsive!.scaleHeight(70),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Terms & conditions ────────────────────────────────
-                termsAndCondidition(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.maxGridContentWidth,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Terms & conditions ────────────────────────────
+                    termsAndCondidition(),
 
-                // ── Delivery charges ──────────────────────────────────
-                deliveryCharges(),
+                    // ── Delivery charges ───────────────────────────────
+                    deliveryCharges(),
 
-                // ── Sales tax ─────────────────────────────────────────
-                if (currentUser.salesTax != null && currentUser.salesTax! > 0)
-                  salesCharges(quote.orderedProducts!),
+                    // ── Sales tax ───────────────────────────────────────
+                    if (currentUser.salesTax != null &&
+                        currentUser.salesTax! > 0)
+                      salesCharges(quote.orderedProducts!),
 
-                // ── Generate quote PDF ────────────────────────────────
-                generateQuotePdf(),
+                    // ── Generate quote PDF ─────────────────────────────
+                    generateQuotePdf(),
 
-                // ── Quote statistics ──────────────────────────────────
-                quoteStatistics(),
-              ],
+                    // ── Quote statistics ───────────────────────────────
+                    quoteStatistics(),
+                  ],
+                ),
+              ),
             ),
           );
         }
@@ -394,54 +405,64 @@ class _QuoteTermsState extends State<QuoteTerms> {
               : null,
         ),
         if (enabled)
-          _groupCard(children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
+          _groupCard(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: deliveryController,
+                  hintText: appLoc!.deliveryTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(12),
+                  maxLenght: 150,
+                  // Already inside a bordered/divided card — its own box
+                  // outline was redundant on top of the card's own border.
+                  enabledBorders: false,
+                ),
               ),
-              child: MyTextField(
-                controller: deliveryController,
-                hintText: appLoc!.deliveryTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(12),
-                maxLenght: 150,
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: returnController,
+                  hintText: currentUser.businessType == 'service'
+                      ? appLoc!.returnTermsService
+                      : appLoc!.returnTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(12),
+                  maxLenght: 150,
+                  enabledBorders: false,
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
-              ),
-              child: MyTextField(
-                controller: returnController,
-                hintText: currentUser.businessType == 'service'
-                    ? appLoc!.returnTermsService
-                    : appLoc!.returnTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(12),
-                maxLenght: 150,
-              ),
-            ),
-          ])
+            ],
+          )
         else
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.deliveryTerms,
-              value:
-                  quote.deliveryTerms != null && quote.deliveryTerms!.isNotEmpty
-                      ? quote.deliveryTerms!
-                      : appLoc!.noDeliveryTerms,
-            ),
-            _infoRow(
-              label: appLoc!.returnTerms,
-              value: quote.returnTerms != null && quote.returnTerms!.isNotEmpty
-                  ? quote.returnTerms!
-                  : appLoc!.noReturnRefundTermsSet,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.deliveryTerms,
+                value:
+                    quote.deliveryTerms != null &&
+                        quote.deliveryTerms!.isNotEmpty
+                    ? quote.deliveryTerms!
+                    : appLoc!.noDeliveryTerms,
+              ),
+              _infoRow(
+                label: appLoc!.returnTerms,
+                value:
+                    quote.returnTerms != null && quote.returnTerms!.isNotEmpty
+                    ? quote.returnTerms!
+                    : appLoc!.noReturnRefundTermsSet,
+              ),
+            ],
+          ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -455,32 +476,37 @@ class _QuoteTermsState extends State<QuoteTerms> {
       children: [
         _sectionLabel(appLoc!.deliveryCharges),
         if (enabled)
-          _groupCard(children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
+          _groupCard(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: deliveryChargesController,
+                  hintText: appLoc!.deliveryFees,
+                  lines: 1,
+                  capitalize: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(14),
+                  isNumberKeyboard: true,
+                  prefix: currency,
+                  enabledBorders: false,
+                ),
               ),
-              child: MyTextField(
-                controller: deliveryChargesController,
-                hintText: appLoc!.deliveryFees,
-                lines: 1,
-                capitalize: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(14),
-                isNumberKeyboard: true,
-                prefix: currency,
-              ),
-            ),
-          ])
+            ],
+          )
         else
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.deliveryFees,
-              value: quote.deliveryFees != null && quote.deliveryFees! > 0
-                  ? '$currency ${number.format(quote.deliveryFees)}'
-                  : appLoc!.noDeliveryFees,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.deliveryFees,
+                value: quote.deliveryFees != null && quote.deliveryFees! > 0
+                    ? '$currency ${number.format(quote.deliveryFees)}'
+                    : appLoc!.noDeliveryFees,
+              ),
+            ],
+          ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -493,38 +519,10 @@ class _QuoteTermsState extends State<QuoteTerms> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(appLoc!.salesTax),
-        _groupCard(children: [
-          if (enabled)
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(14),
-                vertical: responsive!.scaleHeight(12),
-              ),
-              child: Row(
-                children: [
-                  MyText(
-                    text: 'Apply ${currentUser.salesTax}% ${appLoc!.salesTax}',
-                    fontScale: responsive!.scaleFont(13),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  const Spacer(),
-                  SizedBox(
-                    width: responsive!.scaleWidth(70),
-                    child: NeumorphicToggle(
-                      value: addSalesCharges!,
-                      onChanged: (value) {
-                        setState(() => addSalesCharges = value);
-                        _updatePrices(quotedProducts);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ValueListenableBuilder<double>(
-            valueListenable: _taxValueNotifier,
-            builder: (context, value, child) {
-              return Padding(
+        _groupCard(
+          children: [
+            if (enabled)
+              Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: responsive!.scaleWidth(14),
                   vertical: responsive!.scaleHeight(12),
@@ -532,26 +530,57 @@ class _QuoteTermsState extends State<QuoteTerms> {
                 child: Row(
                   children: [
                     MyText(
-                      text: appLoc!.taxValue,
-                      fontScale: responsive!.scaleFont(13),
-                    ),
-                    const Spacer(),
-                    MyText(
-                      text: '${currentUser.salesTax}%',
-                      fontScale: responsive!.scaleFont(12),
-                    ),
-                    SizedBox(width: responsive!.scaleWidth(12)),
-                    MyText(
-                      text: '$currency ${number.format(value)}',
+                      text:
+                          'Apply ${currentUser.salesTax}% ${appLoc!.salesTax}',
                       fontScale: responsive!.scaleFont(13),
                       fontWeight: FontWeight.w500,
                     ),
+                    const Spacer(),
+                    SizedBox(
+                      width: responsive!.scaleWidth(70),
+                      child: NeumorphicToggle(
+                        value: addSalesCharges!,
+                        onChanged: (value) {
+                          setState(() => addSalesCharges = value);
+                          _updatePrices(quotedProducts);
+                        },
+                      ),
+                    ),
                   ],
                 ),
-              );
-            },
-          ),
-        ]),
+              ),
+            ValueListenableBuilder<double>(
+              valueListenable: _taxValueNotifier,
+              builder: (context, value, child) {
+                return Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: responsive!.scaleWidth(14),
+                    vertical: responsive!.scaleHeight(12),
+                  ),
+                  child: Row(
+                    children: [
+                      MyText(
+                        text: appLoc!.taxValue,
+                        fontScale: responsive!.scaleFont(13),
+                      ),
+                      const Spacer(),
+                      MyText(
+                        text: '${currentUser.salesTax}%',
+                        fontScale: responsive!.scaleFont(12),
+                      ),
+                      SizedBox(width: responsive!.scaleWidth(12)),
+                      MyText(
+                        text: '$currency ${number.format(value)}',
+                        fontScale: responsive!.scaleFont(13),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -614,10 +643,9 @@ class _QuoteTermsState extends State<QuoteTerms> {
                           width: responsive!.scaleWidth(40),
                           height: responsive!.scaleHeight(40),
                           decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .error
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -656,7 +684,8 @@ class _QuoteTermsState extends State<QuoteTerms> {
                 child: Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
-                      vertical: responsive!.scaleHeight(14)),
+                    vertical: responsive!.scaleHeight(14),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     borderRadius: const BorderRadius.only(
@@ -705,84 +734,80 @@ class _QuoteTermsState extends State<QuoteTerms> {
           ),
           child: Column(
             children: [
-                  _infoRow(
-                    label: appLoc!.totalValue,
-                    value:
-                        '$currency${calculateTotalPrice(quote.orderedProducts).toStringAsFixed(2)}',
-                  ),
-                  Divider(
-                    height: 0,
-                    thickness: 0.5,
-                    indent: responsive!.scaleWidth(14),
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
-                  ),
-                  _infoRow(
-                    label: appLoc!.totalCost,
-                    value:
-                        '$currency${calculateTotalCost(quote.orderedProducts).toStringAsFixed(2)}',
-                  ),
-                  Divider(
-                    height: 0,
-                    thickness: 0.5,
-                    indent: responsive!.scaleWidth(14),
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
-                  ),
-                  _infoRow(
-                    label: appLoc!.grossProfit,
-                    value:
-                        '$currency${(calculateTotalPrice(quote.orderedProducts) - calculateTotalCost(quote.orderedProducts)).toStringAsFixed(2)}',
-                  ),
-                  Divider(
-                    height: 0,
-                    thickness: 0.5,
-                    indent: responsive!.scaleWidth(14),
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
-                  ),
-                  _infoRow(
-                    label: appLoc!.margin,
-                    value: _formatMarginPercentage(marginPercentage),
-                  ),
-                  // Margin progress bar — unchanged logic
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: responsive!.scaleWidth(14),
-                      vertical: responsive!.scaleHeight(8),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: marginPercentage.clamp(0, 100).round(),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: marginColor,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                ),
+              _infoRow(
+                label: appLoc!.totalValue,
+                value:
+                    '$currency${calculateTotalPrice(quote.orderedProducts).toStringAsFixed(2)}',
+              ),
+              Divider(
+                height: 0,
+                thickness: 0.5,
+                indent: responsive!.scaleWidth(14),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+              ),
+              _infoRow(
+                label: appLoc!.totalCost,
+                value:
+                    '$currency${calculateTotalCost(quote.orderedProducts).toStringAsFixed(2)}',
+              ),
+              Divider(
+                height: 0,
+                thickness: 0.5,
+                indent: responsive!.scaleWidth(14),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+              ),
+              _infoRow(
+                label: appLoc!.grossProfit,
+                value:
+                    '$currency${(calculateTotalPrice(quote.orderedProducts) - calculateTotalCost(quote.orderedProducts)).toStringAsFixed(2)}',
+              ),
+              Divider(
+                height: 0,
+                thickness: 0.5,
+                indent: responsive!.scaleWidth(14),
+                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+              ),
+              _infoRow(
+                label: appLoc!.margin,
+                value: _formatMarginPercentage(marginPercentage),
+              ),
+              // Margin progress bar — unchanged logic
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(14),
+                  vertical: responsive!.scaleHeight(8),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            flex: marginPercentage.clamp(0, 100).round(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: marginColor,
+                                borderRadius: BorderRadius.circular(2),
                               ),
-                              Expanded(
-                                flex: 100 -
-                                    marginPercentage.clamp(0, 100).round(),
-                                child: const SizedBox.shrink(),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 6),
-                        _buildColorLegend(),
-                      ],
+                          Expanded(
+                            flex: 100 - marginPercentage.clamp(0, 100).round(),
+                            child: const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    _buildColorLegend(),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -801,8 +826,10 @@ class _QuoteTermsState extends State<QuoteTerms> {
     }
     double? value = double.tryParse(deliveryChargesController.text);
     if (value == null) {
-      String cleanedText =
-          deliveryChargesController.text.replaceAll(RegExp(r'[^\d\.\-]'), '');
+      String cleanedText = deliveryChargesController.text.replaceAll(
+        RegExp(r'[^\d\.\-]'),
+        '',
+      );
       value = double.tryParse(cleanedText);
     }
     if (addSalesCharges! && _taxValueNotifier.value > 0) {
@@ -888,8 +915,9 @@ class _QuoteTermsState extends State<QuoteTerms> {
     }
     _valueNotifier.value = itemTotal!;
     immediate = result.scheduled ?? true;
-    deliveryChargesController.text =
-        result.deliveryFees != null ? result.deliveryFees.toString() : '';
+    deliveryChargesController.text = result.deliveryFees != null
+        ? result.deliveryFees.toString()
+        : '';
     reminderSet = result.setReminder ?? false;
     if (quote.taxAmount != null && quote.taxAmount! > 0) {
       addSalesCharges = true;
@@ -918,7 +946,8 @@ class _QuoteTermsState extends State<QuoteTerms> {
     deliveryController.text = deliveryTerms;
     returnController.text = returnTerms;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      quoteTotalValue = calculateTotalPrice(quote.orderedProducts) +
+      quoteTotalValue =
+          calculateTotalPrice(quote.orderedProducts) +
           (quote.deliveryFees ?? 0) +
           (quote.taxAmount ?? 0);
       _valueNotifier.value = quoteTotalValue!;
@@ -943,10 +972,11 @@ class _QuoteTermsState extends State<QuoteTerms> {
     if (quote.orderedProducts != null && quote.orderedProducts!.isNotEmpty) {
       quote.orderedProducts!.forEach((key, product) async {
         await ps.updateProductRecord(
-            userId: widget.uid!,
-            productId: product.id,
-            product: product,
-            orderId: quote.uid);
+          userId: widget.uid!,
+          productId: product.id,
+          product: product,
+          orderId: quote.uid,
+        );
       });
     }
     if (deliveryChargesController.text.isNotEmpty) {
@@ -1044,7 +1074,8 @@ class _QuoteTermsState extends State<QuoteTerms> {
   }
 
   double _calculateMarginPercentage(
-      Map<String, OrderProducts>? orderedProducts) {
+    Map<String, OrderProducts>? orderedProducts,
+  ) {
     if (orderedProducts == null || orderedProducts.isEmpty) return 0.0;
     final totalPrice = calculateTotalPrice(orderedProducts);
     final totalCost = calculateTotalCost(orderedProducts);
@@ -1118,8 +1149,9 @@ class _QuoteTermsState extends State<QuoteTerms> {
       snackbarWidget.time = 7;
       snackbarWidget.buttonText = appLoc!.settings;
       snackbarWidget.onButtonPressed = () async {
-        await GoRouter.of(context)
-            .pushNamed('accounts', pathParameters: {'uid': widget.uid!});
+        await GoRouter.of(
+          context,
+        ).pushNamed('accounts', pathParameters: {'uid': widget.uid!});
         _refreshUserData();
       };
       snackbarWidget.showSnack();
@@ -1130,8 +1162,9 @@ class _QuoteTermsState extends State<QuoteTerms> {
       snackbarWidget.time = 7;
       snackbarWidget.buttonText = appLoc!.settings;
       snackbarWidget.onButtonPressed = () async {
-        GoRouter.of(context)
-            .pushNamed('accounts', pathParameters: {'uid': widget.uid!});
+        GoRouter.of(
+          context,
+        ).pushNamed('accounts', pathParameters: {'uid': widget.uid!});
         _refreshUserData();
       };
       snackbarWidget.showSnack();
@@ -1151,8 +1184,9 @@ class _QuoteTermsState extends State<QuoteTerms> {
     StringBuffer termsAndConditions = StringBuffer();
     if (deliveryController.text.isNotEmpty) {
       quote.deliveryTerms = deliveryController.text;
-      termsAndConditions
-          .writeln('${appLoc!.deliveryTerms}: ${quote.deliveryTerms}');
+      termsAndConditions.writeln(
+        '${appLoc!.deliveryTerms}: ${quote.deliveryTerms}',
+      );
     }
     if (returnController.text.isNotEmpty) {
       quote.returnTerms = returnController.text;

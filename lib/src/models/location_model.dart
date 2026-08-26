@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 class LocationModel {
   String? name;
@@ -11,7 +10,13 @@ class LocationModel {
   String? street;
   double? lat;
   double? lng;
-  Uint8List? snapshot;
+  // Web-only change: a Static Maps API URL rather than mobile's downloaded
+  // + base64-stored image bytes. Google's Static Maps API doesn't send
+  // permissive CORS headers, so a browser can't read the response body via
+  // http.get() the way mobile's native HTTP stack can — but the same URL
+  // loads fine as an <img> (Image.network), which is the API's actual
+  // intended client-side usage. See location_picker.dart's _getMapSnapshot.
+  String? snapshot;
   LocationModel(
       {this.name,
       this.mapCountry,
@@ -40,7 +45,7 @@ class LocationModel {
       'street': street,
       'lat': lat,
       'lng': lng,
-      'snapshot': snapshot != null ? base64Encode(snapshot as List<int>) : null,
+      'snapshot': snapshot,
     };
   }
 
@@ -55,7 +60,7 @@ class LocationModel {
       street: map['street'],
       lat: map['lat']?.toDouble(),
       lng: map['lng']?.toDouble(),
-      snapshot: map['snapshot'] != null ? base64Decode(map['snapshot']) : null,
+      snapshot: map['snapshot'],
     );
   }
 

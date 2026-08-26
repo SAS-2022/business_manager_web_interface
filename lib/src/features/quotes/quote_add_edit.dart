@@ -3,6 +3,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/url_launcher_func.dart';
@@ -30,8 +31,13 @@ import '../../services/auth_service.dart';
 import '../../services/product_service.dart';
 
 class QuoteAddEdit extends StatefulWidget {
-  const QuoteAddEdit(
-      {super.key, this.uid, this.quoteId, this.clientId, this.quoteToOrderId});
+  const QuoteAddEdit({
+    super.key,
+    this.uid,
+    this.quoteId,
+    this.clientId,
+    this.quoteToOrderId,
+  });
   final String? uid;
   final String? quoteId;
   final String? clientId;
@@ -188,8 +194,9 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             elevation: 0,
             title: MyText(
-              text:
-                  widget.quoteId == null ? appLoc!.addQuote : appLoc!.editQuote,
+              text: widget.quoteId == null
+                  ? appLoc!.addQuote
+                  : appLoc!.editQuote,
               fontScale: responsive!.scaleFont(18),
               fontWeight: FontWeight.w500,
             ),
@@ -226,7 +233,8 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                     return Center(
                       child: MyText(
                         text: errorClass.userNoTFoundError(
-                            e: usershot.error.toString()),
+                          e: usershot.error.toString(),
+                        ),
                       ),
                     );
                   } else if (usershot.connectionState ==
@@ -302,66 +310,73 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
               top: responsive!.scaleHeight(12),
               bottom: responsive!.scaleHeight(70),
             ),
-            child: Stack(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Quote ID bar ──────────────────────────────────
-                    if (quoteshot.data != null)
-                      _buildQuoteIdBar(quoteshot.data!),
-
-                    // ── Client ────────────────────────────────────────
-                    _sectionLabel(appLoc!.clientName),
-                    clientNameTypeIn(),
-
-                    SizedBox(height: responsive!.scaleHeight(20)),
-
-                    // ── Payment terms ─────────────────────────────────
-                    _sectionLabel(appLoc!.paymentTerms),
-                    paymentTermsWidget(),
-
-                    SizedBox(height: responsive!.scaleHeight(20)),
-
-                    // ── Products ──────────────────────────────────────
-                    _sectionLabel(appLoc!.product),
-                    productDetails(),
-                  ],
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.maxGridContentWidth,
                 ),
+                child: Stack(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // ── Quote ID bar ────────────────────────────
+                        if (quoteshot.data != null)
+                          _buildQuoteIdBar(quoteshot.data!),
 
-                // Cancelled stamp overlay — logic unchanged
-                if (widget.quoteId != null && quote.status == 'canceled')
-                  Positioned(
-                    top: responsive!.scaleHeight(50),
-                    left: responsive!.scaleWidth(50),
-                    child: Transform(
-                      transform: Matrix4.rotationZ(-25 * (pi / 180)),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: responsive!.scaleWidth(160),
-                        height: responsive!.scaleHeight(70),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(5),
-                          border: Border.all(color: Colors.red, width: 2),
-                        ),
-                        child: Center(
-                          child: MyText(
-                            text: quote.status == 'canceled'
-                                ? appLoc!.cancelled.toUpperCase()
-                                : '',
-                            fontColor: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontScale: responsive!.scaleFont(40),
+                        // ── Client ────────────────────────────────────
+                        _sectionLabel(appLoc!.clientName),
+                        clientNameTypeIn(),
+
+                        SizedBox(height: responsive!.scaleHeight(20)),
+
+                        // ── Payment terms ───────────────────────────
+                        _sectionLabel(appLoc!.paymentTerms),
+                        paymentTermsWidget(),
+
+                        SizedBox(height: responsive!.scaleHeight(20)),
+
+                        // ── Products ────────────────────────────────
+                        _sectionLabel(appLoc!.product),
+                        productDetails(),
+                      ],
+                    ),
+
+                    // Cancelled stamp overlay — logic unchanged
+                    if (widget.quoteId != null && quote.status == 'canceled')
+                      Positioned(
+                        top: responsive!.scaleHeight(50),
+                        left: responsive!.scaleWidth(50),
+                        child: Transform(
+                          transform: Matrix4.rotationZ(-25 * (pi / 180)),
+                          alignment: Alignment.center,
+                          child: Container(
+                            width: responsive!.scaleWidth(160),
+                            height: responsive!.scaleHeight(70),
+                            decoration: BoxDecoration(
+                              color: Colors.red.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(5),
+                              border: Border.all(color: Colors.red, width: 2),
+                            ),
+                            child: Center(
+                              child: MyText(
+                                text: quote.status == 'canceled'
+                                    ? appLoc!.cancelled.toUpperCase()
+                                    : '',
+                                fontColor: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontScale: responsive!.scaleFont(40),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
 
-                if (quoteshot.data?.status == constStrings.cancel)
-                  Center(child: _buildCancelledWidget()),
-              ],
+                    if (quoteshot.data?.status == constStrings.cancel)
+                      Center(child: _buildCancelledWidget()),
+                  ],
+                ),
+              ),
             ),
           );
         }
@@ -407,14 +422,17 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                   if (mounted) setState(() => isLoading = false);
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.secondaryContainer,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color:
-                          Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.3),
                       width: 0.5,
                     ),
                   ),
@@ -433,19 +451,19 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                   if (mounted) setState(() => isLoading = false);
                 },
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.12),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .primary
-                          .withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: 0.3),
                       width: 0.5,
                     ),
                   ),
@@ -468,8 +486,10 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                 if (mounted) setState(() => isLoading = false);
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEAF3DE),
                   borderRadius: BorderRadius.circular(20),
@@ -724,13 +744,13 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
               Container(
                 margin: EdgeInsets.only(bottom: responsive!.scaleHeight(12)),
                 decoration: BoxDecoration(
-                  color: Theme.of(context)
-                      .colorScheme
-                      .surface
-                      .withValues(alpha: 0.3),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.surface.withValues(alpha: 0.3),
                   border: Border.all(
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.3),
                     width: 0.5,
                   ),
                   borderRadius: BorderRadius.circular(12),
@@ -743,8 +763,9 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                     height: 0,
                     thickness: 0.5,
                     indent: responsive!.scaleWidth(14),
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.25),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.25),
                   ),
                   itemBuilder: (context, index) {
                     var p = selectedProduct!.entries.elementAt(index).value;
@@ -798,7 +819,8 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                                   (OrderProducts product) {
                                     setState(() {
                                       selectedProduct![selectedProduct!.keys
-                                          .elementAt(index)] = product;
+                                              .elementAt(index)] =
+                                          product;
                                     });
                                   },
                                   currentUser!,
@@ -809,23 +831,23 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                                 width: responsive!.scaleWidth(32),
                                 height: responsive!.scaleHeight(32),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .surfaceContainerHighest,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(
-                                    color: Theme.of(context)
-                                        .dividerColor
-                                        .withValues(alpha: 0.3),
+                                    color: Theme.of(
+                                      context,
+                                    ).dividerColor.withValues(alpha: 0.3),
                                     width: 0.5,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.tune_outlined,
                                   size: responsive!.scaleHeight(15),
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .onSurfaceVariant,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
                                 ),
                               ),
                             ),
@@ -843,10 +865,9 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                                 width: responsive!.scaleWidth(32),
                                 height: responsive!.scaleHeight(32),
                                 decoration: BoxDecoration(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .error
-                                      .withValues(alpha: 0.08),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.error.withValues(alpha: 0.08),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Icon(
@@ -915,7 +936,8 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
                         );
                       },
                       itemBuilder: (context, value) {
-                        bool added = selectedProduct != null &&
+                        bool added =
+                            selectedProduct != null &&
                             selectedProduct!.isNotEmpty &&
                             selectedProduct!.containsKey(value.id);
                         return ListTile(
@@ -1230,16 +1252,18 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
     }
     matches.clear();
     for (var client in allClients) {
-      bool match = queries.every((queryWord) =>
-          client.firstName!.toLowerCase().contains(queryWord) ||
-          client.lastName != null &&
-              client.lastName!.toLowerCase().contains(queryWord) ||
-          client.companyName != null &&
-              client.companyName!.toLowerCase().contains(queryWord) ||
-          client.phoneNumber != null &&
-              client.phoneNumber!['number']!.contains(queryWord) ||
-          client.email != null &&
-              client.email!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            client.firstName!.toLowerCase().contains(queryWord) ||
+            client.lastName != null &&
+                client.lastName!.toLowerCase().contains(queryWord) ||
+            client.companyName != null &&
+                client.companyName!.toLowerCase().contains(queryWord) ||
+            client.phoneNumber != null &&
+                client.phoneNumber!['number']!.contains(queryWord) ||
+            client.email != null &&
+                client.email!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(client);
     }
     return matches;
@@ -1277,11 +1301,13 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
     }
     matches.clear();
     for (var product in allProducts) {
-      bool match = queries.every((queryWord) =>
-          product.name.toLowerCase().contains(queryWord) ||
-          product.description.toLowerCase().contains(queryWord) ||
-          product.sku != null &&
-              product.sku!.toLowerCase().contains(queryWord));
+      bool match = queries.every(
+        (queryWord) =>
+            product.name.toLowerCase().contains(queryWord) ||
+            product.description.toLowerCase().contains(queryWord) ||
+            product.sku != null &&
+                product.sku!.toLowerCase().contains(queryWord),
+      );
       if (match) matches.add(product);
     }
     return matches;
@@ -1312,8 +1338,12 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
       snackbarWidget.content = appLoc!.failedToRestoreOrder;
       snackbarWidget.time = 5;
       snackbarWidget.showSnack();
-      ErrorLoggingService.instance
-          .recordError(e, s, fatal: false, printDetails: true);
+      ErrorLoggingService.instance.recordError(
+        e,
+        s,
+        fatal: false,
+        printDetails: true,
+      );
     }
     if (mounted) {
       setState(() {
@@ -1346,8 +1376,10 @@ class _QuoteAddEditState extends State<QuoteAddEdit> {
     );
     try {
       if (quote.quoteToOrderId != null) {
-        Orders? existingOrder =
-            await os.futureSingleOrder(widget.uid, quote.quoteToOrderId!);
+        Orders? existingOrder = await os.futureSingleOrder(
+          widget.uid,
+          quote.quoteToOrderId!,
+        );
         if (existingOrder.uid != null && existingOrder.invoiceUrl == null) {
           if (mounted) {
             setState(() {

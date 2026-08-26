@@ -427,6 +427,7 @@
   "total": "Total",
   "paymentTerms": "Conditions de paiement",
   "termsandConditions": "Conditions générales",
+  "termsIntroWeb": "Veuillez lire et accepter nos Conditions d'utilisation avant de continuer.",
   "termsandConditionDesc": "Chaque utilisateur doit accepter les conditions de {provider} avant de continuer",
   "@termsandConditionDesc": {
     "type": "text",

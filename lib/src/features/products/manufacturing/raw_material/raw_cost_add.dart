@@ -19,12 +19,13 @@ import '../../../../models/product_model.dart';
 import '../../../../models/user_model.dart';
 import '../../../../services/database_service.dart';
 import '../../../../services/product_service.dart';
+import '../../add_product_screen.dart' show InventoryField;
 
-/// Dropped vs. mobile: the inventory section (`rawItemInventory`,
-/// `InventoryField` from `add_product_screen.dart`) is gated behind
-/// `currentUser.isSubscribed`, permanently unreachable for any web user —
-/// same rationale as every other subscription-gated block dropped elsewhere
-/// in this port.
+/// Inventory section (`rawItemInventory`) ported in — it was previously
+/// missing from this file entirely (unlike the equivalent section in
+/// add_product_screen.dart, which existed but was blurred out). Gated
+/// behind `currentUser.isSubscribed` + `useInventory`, matching mobile
+/// exactly; currently unreachable on web pending a real web subscribe flow.
 /// Real mobile bug fixed here (unfixed at the source): `addNewRawItem()`
 /// always set `createdAt: DateTime.now()`, even when editing — every edit
 /// silently bumped the item to the top of `streamAllRawItems()`'s
@@ -62,6 +63,7 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
   Future<UserDetails>? getCurrentUser;
   Future<RawItem>? getRawItem;
   RawItem? existingRawItem;
+  Map<String, dynamic> inventoryValues = {};
 
   @override
   void initState() {
@@ -179,8 +181,10 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
             actions: [
               IconButton(
                 onPressed: addNewRawItem,
-                icon: Icon(Icons.save_outlined,
-                    size: responsive!.scaleHeight(22)),
+                icon: Icon(
+                  Icons.save_outlined,
+                  size: responsive!.scaleHeight(22),
+                ),
               ),
             ],
           ),
@@ -189,7 +193,8 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
             builder: (context, usershot) {
               if (usershot.hasError) {
                 return Center(
-                    child: MyText(text: errorClass.userNoTFoundError()));
+                  child: MyText(text: errorClass.userNoTFoundError()),
+                );
               }
               if (usershot.connectionState == ConnectionState.waiting) {
                 return const GradientSkeleton();
@@ -246,7 +251,8 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
         builder: (context, rawItemshot) {
           if (rawItemshot.hasError) {
             return Center(
-                child: MyText(text: errorClass.rawMaterialNotLoading()));
+              child: MyText(text: errorClass.rawMaterialNotLoading()),
+            );
           }
           if (rawItemshot.connectionState == ConnectionState.waiting) {
             return const GradientSkeleton();
@@ -262,27 +268,29 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
             children: [
               // ── Details ────────────────────────────────────────────────
               _sectionLabel(appLoc!.details),
-              _groupCard(children: [
-                _iconFieldRow(
-                  icon: Icons.inventory_2_outlined,
-                  child: FlushTextField(
-                    controller: nameController,
-                    hintText: appLoc!.name,
-                    textCapitalization: TextCapitalization.words,
-                    fontSize: responsive!.scaleFont(13),
+              _groupCard(
+                children: [
+                  _iconFieldRow(
+                    icon: Icons.inventory_2_outlined,
+                    child: FlushTextField(
+                      controller: nameController,
+                      hintText: appLoc!.name,
+                      textCapitalization: TextCapitalization.words,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
                   ),
-                ),
-                _iconFieldRow(
-                  icon: Icons.notes_outlined,
-                  child: FlushTextField(
-                    controller: descriptionController,
-                    hintText: appLoc!.description,
-                    textCapitalization: TextCapitalization.sentences,
-                    fontSize: responsive!.scaleFont(13),
+                  _iconFieldRow(
+                    icon: Icons.notes_outlined,
+                    child: FlushTextField(
+                      controller: descriptionController,
+                      hintText: appLoc!.description,
+                      textCapitalization: TextCapitalization.sentences,
+                      fontSize: responsive!.scaleFont(13),
+                    ),
+                    crossAxis: CrossAxisAlignment.start,
                   ),
-                  crossAxis: CrossAxisAlignment.start,
-                ),
-              ]),
+                ],
+              ),
 
               SizedBox(height: responsive!.scaleHeight(20)),
 
@@ -293,16 +301,17 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: FlushTextField(
                         controller: quantityController,
                         hintText: appLoc!.quantity,
                         keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true),
+                          decimal: true,
+                        ),
                         fontSize: responsive!.scaleFont(13),
                       ),
                     ),
@@ -311,9 +320,9 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest,
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.surfaceContainerHighest,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: FlushTextField(
@@ -331,57 +340,61 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
 
               // ── Cost ───────────────────────────────────────────────────
               _sectionLabel(appLoc!.cost),
-              _groupCard(children: [
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: responsive!.scaleWidth(14),
-                    vertical: responsive!.scaleHeight(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.monetization_on_outlined,
-                        size: responsive!.scaleHeight(18),
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                      SizedBox(width: responsive!.scaleWidth(10)),
-                      if (user.currency != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surface
-                                .withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color: Theme.of(context)
-                                  .dividerColor
-                                  .withValues(alpha: 0.3),
-                              width: 0.5,
+              _groupCard(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive!.scaleWidth(14),
+                      vertical: responsive!.scaleHeight(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.monetization_on_outlined,
+                          size: responsive!.scaleHeight(18),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                        SizedBox(width: responsive!.scaleWidth(10)),
+                        if (user.currency != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.surface.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withValues(alpha: 0.3),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: MyText(
+                              text: user.currency!['symbol'] ?? '',
+                              fontScale: responsive!.scaleFont(13),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          child: MyText(
-                            text: user.currency!['symbol'] ?? '',
-                            fontScale: responsive!.scaleFont(13),
-                            fontWeight: FontWeight.w500,
+                        SizedBox(width: responsive!.scaleWidth(8)),
+                        Expanded(
+                          child: FlushTextField(
+                            controller: costController,
+                            hintText: appLoc!.cost,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            fontSize: responsive!.scaleFont(14),
                           ),
                         ),
-                      SizedBox(width: responsive!.scaleWidth(8)),
-                      Expanded(
-                        child: FlushTextField(
-                          controller: costController,
-                          hintText: appLoc!.cost,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          fontSize: responsive!.scaleFont(14),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
 
               // ── Conversion rates ───────────────────────────────────────
               if (conversionRates.isNotEmpty) ...[
@@ -389,13 +402,13 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                 _sectionLabel(appLoc!.conversionRates), // add to l10n
                 Container(
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .surface
-                        .withValues(alpha: 0.3),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surface.withValues(alpha: 0.3),
                     border: Border.all(
-                      color:
-                          Theme.of(context).dividerColor.withValues(alpha: 0.3),
+                      color: Theme.of(
+                        context,
+                      ).dividerColor.withValues(alpha: 0.3),
                       width: 0.5,
                     ),
                     borderRadius: BorderRadius.circular(12),
@@ -439,16 +452,14 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                       Divider(
                         height: 0,
                         thickness: 0.5,
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.3),
+                        color: Theme.of(
+                          context,
+                        ).dividerColor.withValues(alpha: 0.3),
                       ),
                       // Rows
-                      ...conversionRates.entries
-                          .toList()
-                          .asMap()
-                          .entries
-                          .map((outer) {
+                      ...conversionRates.entries.toList().asMap().entries.map((
+                        outer,
+                      ) {
                         final i = outer.key;
                         final data = outer.value.value;
                         final key = outer.value.key;
@@ -492,9 +503,9 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                                 height: 0,
                                 thickness: 0.5,
                                 indent: responsive!.scaleWidth(14),
-                                color: Theme.of(context)
-                                    .dividerColor
-                                    .withValues(alpha: 0.2),
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withValues(alpha: 0.2),
                               ),
                           ],
                         );
@@ -502,6 +513,15 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                     ],
                   ),
                 ),
+              ],
+
+              // ── Inventory ──────────────────────────────────────────────
+              if (user.isSubscribed != null &&
+                  user.isSubscribed! &&
+                  user.useInventory != null &&
+                  user.useInventory!) ...[
+                SizedBox(height: responsive!.scaleHeight(20)),
+                rawItemInventory(user, rawItem),
               ],
 
               SizedBox(height: responsive!.scaleHeight(20)),
@@ -513,7 +533,8 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
-                        vertical: responsive!.scaleHeight(14)),
+                      vertical: responsive!.scaleHeight(14),
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.transparent,
                       borderRadius: BorderRadius.circular(12),
@@ -550,17 +571,49 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
     );
   }
 
+  // ── Inventory — unchanged logic, section label added ───────────────────────
+
+  Widget rawItemInventory(UserDetails user, RawItem? rawItem) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionLabel(appLoc!.inventory),
+        Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: user.inventoryLoc!.entries.map((location) {
+              return InventoryField(
+                locationName: location.value,
+                locationId: location.key,
+                initialValue: rawItem?.inventory?[location.value],
+                onChanged: (name, value) {
+                  inventoryValues[name] = value;
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
   // ── Logic — completely unchanged ───────────────────────────────────────────
 
   Future<UserDetails> fetchUser() async => db.getCurrentUser(uid: widget.uid);
 
   Future<RawItem> fetchRawItem() async {
     var result = await ps.futureSingleRawItem(
-        userId: widget.uid!, rawItemId: widget.rawItemId!);
+      userId: widget.uid!,
+      rawItemId: widget.rawItemId!,
+    );
     costController.text = result.cost.toString();
     unitController.text = result.unit.toString();
     quantityController.text = result.quantity.toString();
     existingRawItem = result;
+    if (result.inventory != null) inventoryValues = result.inventory!;
     return result;
   }
 
@@ -608,6 +661,7 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
       conversion: conversionRates,
       conversionOrder: order,
       createdAt: existingRawItem?.createdAt ?? DateTime.now(),
+      inventory: inventoryValues,
     );
 
     try {
@@ -660,18 +714,23 @@ class _RawMaterialAddEditState extends State<RawMaterialAddEdit> {
           final cost = double.tryParse(costController.text) ?? 1.0;
           originalRates.forEach((targetUnit, rate) {
             results[targetUnit] = ConversionRateModel(
-                rate: rate * quantity, cost: cost / (rate * quantity));
+              rate: rate * quantity,
+              cost: cost / (rate * quantity),
+            );
             order.add(targetUnit);
           });
         } else {
           final quantity = double.tryParse(quantityController.text) ?? 1.0;
           final cost = double.tryParse(costController.text) ?? 1.0;
-          results[unitController.text.toLowerCase()] =
-              ConversionRateModel(rate: quantity, cost: cost);
+          results[unitController.text.toLowerCase()] = ConversionRateModel(
+            rate: quantity,
+            cost: cost,
+          );
         }
       }
-      conversionRates =
-          LinkedHashMap<String, ConversionRateModel>.from(results);
+      conversionRates = LinkedHashMap<String, ConversionRateModel>.from(
+        results,
+      );
       if (mounted) setState(() {});
     });
   }

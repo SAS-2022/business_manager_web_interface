@@ -1224,6 +1224,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get termsandConditions => 'Termini e Condizioni';
 
   @override
+  String get termsIntroWeb =>
+      'Leggi e accetta i nostri Termini di servizio prima di continuare.';
+
+  @override
   String termsandConditionDesc(Object provider) {
     return 'Ogni utente deve accettare i termini di $provider prima di procedere';
   }

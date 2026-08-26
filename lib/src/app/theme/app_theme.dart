@@ -25,7 +25,11 @@ class AppTheme {
         outline: Colors.amberAccent,
         seedColor: Colors.blue,
         brightness: Brightness.light,
-        surface: const Color.fromARGB(255, 79, 100, 136),
+        // Was a medium-dark slate blue — meant as a subtle neutral, but it
+        // drove the NavigationRail's default background (dark sidebar) and
+        // tinted every card built from surface.withValues(alpha: ...)
+        // across Home, reading as dull/dark instead of a light dashboard.
+        surface: const Color.fromARGB(255, 247, 249, 252),
         surfaceContainer: const Color.fromARGB(255, 191, 188, 177),
         error: Colors.red),
   );

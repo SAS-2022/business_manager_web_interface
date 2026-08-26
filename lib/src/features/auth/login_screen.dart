@@ -439,11 +439,14 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       } else {
+        // Route through Wrapper ('/') rather than straight to home — Wrapper
+        // is what actually decides whether this user still needs the
+        // business type / currency onboarding steps first (see
+        // wrapper.dart). Going directly to homeId here silently skipped
+        // that check for every login, including the "verify email, then
+        // log back in" flow every new signup goes through.
         // ignore: use_build_context_synchronously
-        GoRouter.of(context).goNamed(
-          'homeId',
-          pathParameters: {'uid': result.userCredential!.user!.uid},
-        );
+        GoRouter.of(context).goNamed('/');
       }
     } catch (e) {
       setState(() => isLoading = false);

@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import '../../theme/responsive_utils.dart';
 
 class AnimatedRadioButton extends StatefulWidget {
-  const AnimatedRadioButton(
-      {super.key,
-      this.quantity,
-      this.titles,
-      required this.onSelected,
-      this.initialSelected});
+  const AnimatedRadioButton({
+    super.key,
+    this.quantity,
+    this.titles,
+    required this.onSelected,
+    this.initialSelected,
+  });
   final int? quantity;
   final List<String>? titles;
   final Function onSelected;
@@ -40,17 +41,22 @@ class _AnimatedRadioButtonState extends State<AnimatedRadioButton> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: widget.quantity,
-        itemBuilder: (context, index) {
-          return GestureDetector(
+    // Row of Expanded options instead of a vertical ListView — the
+    // vertical list stacked each option as a full-width bar (fine for a
+    // narrow phone screen, but on a wide web page it turned 2 short
+    // options into two giant bars one on top of the other).
+    return Row(
+      children: List.generate(widget.quantity ?? 0, (index) {
+        return Expanded(
+          child: GestureDetector(
             onTap: () {
               onSelected(index);
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 300),
-              margin: responsive!.responsivePaddingVer,
+              margin: EdgeInsets.symmetric(
+                horizontal: responsive!.scaleWidth(4),
+              ),
               padding: responsive!.responsivePaddingS,
               decoration: BoxDecoration(
                 color: Colors.transparent,
@@ -63,6 +69,7 @@ class _AnimatedRadioButtonState extends State<AnimatedRadioButton> {
                 ),
               ),
               child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
@@ -105,7 +112,9 @@ class _AnimatedRadioButtonState extends State<AnimatedRadioButton> {
                 ],
               ),
             ),
-          );
-        });
+          ),
+        );
+      }),
+    );
   }
 }

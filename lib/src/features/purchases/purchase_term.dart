@@ -5,6 +5,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
 import 'package:business_manager_web_ui/src/app/animations/progress_animation.dart';
 import 'package:business_manager_web_ui/src/app/constants/app_constants.dart';
+import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/constants/error_class.dart';
 import 'package:business_manager_web_ui/src/app/theme/responsive_utils.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
@@ -160,20 +161,20 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
       child: Row(
         children: [
           Expanded(
-            child: MyText(
-              text: label,
-              fontScale: responsive!.scaleFont(13),
-            ),
+            child: MyText(text: label, fontScale: responsive!.scaleFont(13)),
           ),
           SizedBox(width: responsive!.scaleWidth(3)),
-          SizedBox(
-            width: responsive!.screenWidth * 0.6,
+          // Was a fixed 60% of the full screen width — overflows once this
+          // row sits in a capped-width container. Expanded matches
+          // whatever width it's actually given instead.
+          Expanded(
             child: MyText(
               text: value,
               fontScale: responsive!.scaleFont(13),
               fontWeight: FontWeight.w500,
               softWrap: true,
               maxLines: 2,
+              align: TextAlign.end,
             ),
           ),
         ],
@@ -211,7 +212,10 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                   onPressed: () {
                     if (dataModified!) {
                       warningDialog.showWarningDialog(
-                          context, appLoc!, appLoc!.unsavedData);
+                        context,
+                        appLoc!,
+                        appLoc!.unsavedData,
+                      );
                       return;
                     }
                     NavigationHelper.resetToHome(context, widget.uid!);
@@ -238,7 +242,8 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                   return Center(
                     child: MyText(
                       text: errorClass.userNoTFoundError(
-                          e: usershot.error.toString()),
+                        e: usershot.error.toString(),
+                      ),
                     ),
                   );
                 } else if (usershot.connectionState ==
@@ -300,8 +305,9 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
         if (purchaseshot.hasError) {
           return Center(
             child: MyText(
-              text:
-                  errorClass.purchaseNotLoading(purchaseshot.error.toString()),
+              text: errorClass.purchaseNotLoading(
+                purchaseshot.error.toString(),
+              ),
             ),
           );
         } else if (purchaseshot.connectionState == ConnectionState.waiting) {
@@ -319,21 +325,28 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
               top: responsive!.scaleHeight(12),
               bottom: responsive!.scaleHeight(70),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // ── Terms & conditions ──────────────────────────────
-                purchaceOrderTerms(),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.maxGridContentWidth,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Terms & conditions ────────────────────────────
+                    purchaceOrderTerms(),
 
-                // ── Generate PO ─────────────────────────────────────
-                generatePurchaseOrder(),
+                    // ── Generate PO ────────────────────────────────────
+                    generatePurchaseOrder(),
 
-                // ── Items delivered ─────────────────────────────────
-                if (useInventory && purchaseshot.data!.pdfUrl != null)
-                  itemsDelivered(),
+                    // ── Items delivered ────────────────────────────────
+                    if (useInventory && purchaseshot.data!.pdfUrl != null)
+                      itemsDelivered(),
 
-                SizedBox(height: responsive!.scaleHeight(40)),
-              ],
+                    SizedBox(height: responsive!.scaleHeight(40)),
+                  ],
+                ),
+              ),
             ),
           );
         } else {
@@ -351,51 +364,61 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
       children: [
         _sectionLabel(appLoc!.termsandConditions),
         if (enabled)
-          _groupCard(children: [
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
+          _groupCard(
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: deliveryController,
+                  hintText: appLoc!.deliveryTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  maxLenght: 150,
+                  // Already inside a bordered/divided card — its own box
+                  // outline was redundant on top of the card's own border.
+                  enabledBorders: false,
+                ),
               ),
-              child: MyTextField(
-                controller: deliveryController,
-                hintText: appLoc!.deliveryTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                maxLenght: 150,
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: responsive!.scaleWidth(4),
+                  vertical: responsive!.scaleHeight(2),
+                ),
+                child: MyTextField(
+                  controller: returnController,
+                  hintText: appLoc!.returnTerms,
+                  lines: 4,
+                  capitalize: TextCapitalization.sentences,
+                  maxLenght: 150,
+                  enabledBorders: false,
+                ),
               ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: responsive!.scaleWidth(4),
-                vertical: responsive!.scaleHeight(2),
-              ),
-              child: MyTextField(
-                controller: returnController,
-                hintText: appLoc!.returnTerms,
-                lines: 4,
-                capitalize: TextCapitalization.sentences,
-                maxLenght: 150,
-              ),
-            ),
-          ])
+            ],
+          )
         else
-          _groupCard(children: [
-            _infoRow(
-              label: appLoc!.deliveryTerms,
-              value: purchase.deliveryTerms != null &&
-                      purchase.deliveryTerms!.isNotEmpty
-                  ? purchase.deliveryTerms!
-                  : appLoc!.noDeliveryTerms,
-            ),
-            _infoRow(
-              label: appLoc!.returnTerms,
-              value: purchase.returnTerms != null &&
-                      purchase.returnTerms!.isNotEmpty
-                  ? purchase.returnTerms!
-                  : appLoc!.noReturnRefundTermsSet,
-            ),
-          ]),
+          _groupCard(
+            children: [
+              _infoRow(
+                label: appLoc!.deliveryTerms,
+                value:
+                    purchase.deliveryTerms != null &&
+                        purchase.deliveryTerms!.isNotEmpty
+                    ? purchase.deliveryTerms!
+                    : appLoc!.noDeliveryTerms,
+              ),
+              _infoRow(
+                label: appLoc!.returnTerms,
+                value:
+                    purchase.returnTerms != null &&
+                        purchase.returnTerms!.isNotEmpty
+                    ? purchase.returnTerms!
+                    : appLoc!.noReturnRefundTermsSet,
+              ),
+            ],
+          ),
         SizedBox(height: responsive!.scaleHeight(20)),
       ],
     );
@@ -459,10 +482,9 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                           width: responsive!.scaleWidth(40),
                           height: responsive!.scaleHeight(40),
                           decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .error
-                                .withValues(alpha: 0.08),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.error.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Icon(
@@ -501,7 +523,8 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                 child: Container(
                   width: double.infinity,
                   padding: EdgeInsets.symmetric(
-                      vertical: responsive!.scaleHeight(14)),
+                    vertical: responsive!.scaleHeight(14),
+                  ),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.primary,
                     borderRadius: const BorderRadius.only(
@@ -555,7 +578,8 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                   vertical: responsive!.scaleHeight(12),
                 ),
                 child: MyText(
-                  text: purchase.materialReceived != null &&
+                  text:
+                      purchase.materialReceived != null &&
                           purchase.materialReceived!
                       ? appLoc!.materialAlreadyReceived
                       : appLoc!.receiveInfo,
@@ -593,7 +617,8 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
                   child: Container(
                     width: double.infinity,
                     padding: EdgeInsets.symmetric(
-                        vertical: responsive!.scaleHeight(14)),
+                      vertical: responsive!.scaleHeight(14),
+                    ),
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary,
                       borderRadius: const BorderRadius.only(
@@ -704,8 +729,10 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
     return purchase;
   }
 
-  void _initializeControllers(
-      {PurchaseModel? orderData, UserDetails? userData}) {
+  void _initializeControllers({
+    PurchaseModel? orderData,
+    UserDetails? userData,
+  }) {
     String deliveryTerms = '';
     String returnTerms = '';
     if (orderData?.deliveryTerms != null &&
@@ -787,8 +814,9 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
       snackbarWidget.time = 7;
       snackbarWidget.buttonText = appLoc!.settings;
       snackbarWidget.onButtonPressed = () async {
-        await GoRouter.of(context)
-            .pushNamed('accounts', pathParameters: {'uid': widget.uid!});
+        await GoRouter.of(
+          context,
+        ).pushNamed('accounts', pathParameters: {'uid': widget.uid!});
         _refreshUserData();
       };
       snackbarWidget.showSnack();
@@ -859,8 +887,9 @@ class _PurchaseTermsState extends State<PurchaseTerms> {
     for (var value in purchase.purchasedProducts!.values) {
       products.add(value);
     }
-    GoRouter.of(context).pushNamed('receiveMaterial',
-        pathParameters: {'uid': widget.uid!, 'poId': purchase.id!});
+    GoRouter.of(context).pushNamed(
+      'receiveMaterial',
+      pathParameters: {'uid': widget.uid!, 'poId': purchase.id!},
+    );
   }
-
 }

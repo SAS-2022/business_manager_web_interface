@@ -36,16 +36,19 @@ class ProductInfoDialog {
     SnackbarWidget snackbarWidget = SnackbarWidget();
     snackbarWidget.context = context;
     double? newItemValue = purchase! ? orderProduct.cost : orderProduct.price;
-    TextEditingController quantityController =
-        TextEditingController(text: orderProduct.quantity.toString());
+    TextEditingController quantityController = TextEditingController(
+      text: orderProduct.quantity.toString(),
+    );
     TextEditingController discountController = TextEditingController(
-        text: orderProduct.discount != null
-            ? orderProduct.discount.toString()
-            : '0');
+      text: orderProduct.discount != null
+          ? orderProduct.discount.toString()
+          : '0',
+    );
     TextEditingController priceController = TextEditingController(
-        text: purchase
-            ? orderProduct.cost.toString()
-            : orderProduct.price.toString());
+      text: purchase
+          ? orderProduct.cost.toString()
+          : orderProduct.price.toString(),
+    );
 
     // ── All listener logic — completely unchanged ───────────────────────────
     void safeCalculateValue() {
@@ -58,12 +61,14 @@ class ProductInfoDialog {
       if (quantity != null && price != null) {
         newItemValue = quantity * price;
       } else if (quantity != null && price == null) {
-        final originalPrice =
-            purchase ? orderProduct.cost ?? 0 : orderProduct.price ?? 0;
+        final originalPrice = purchase
+            ? orderProduct.cost ?? 0
+            : orderProduct.price ?? 0;
         newItemValue = quantity * originalPrice;
       } else if (discount == null || discount == 0.0) {
-        final originalPrice =
-            purchase ? orderProduct.cost ?? 0 : orderProduct.price ?? 0;
+        final originalPrice = purchase
+            ? orderProduct.cost ?? 0
+            : orderProduct.price ?? 0;
         newItemValue = (quantity ?? 0) * originalPrice;
       } else if (price != null && quantity == null) {
         newItemValue = price;
@@ -99,19 +104,28 @@ class ProductInfoDialog {
           !purchase) {
         try {
           if (currentUser.businessType == 'trading') {
-            final result = await checkIfInventoryIsAvailable(currentUser.uid!,
-                orderProduct.id!, quantityController.text, inventoryLoc);
+            final result = await checkIfInventoryIsAvailable(
+              currentUser.uid!,
+              orderProduct.id!,
+              quantityController.text,
+              inventoryLoc,
+            );
             final totalStock = await checkInventoryTotalTrading(
-                currentUser.uid!, orderProduct.id!, inventoryLoc);
+              currentUser.uid!,
+              orderProduct.id!,
+              inventoryLoc,
+            );
             if (!result) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(appLoc.insufficientInventory),
-                  elevation: 4,
-                  duration: const Duration(seconds: 4),
-                  behavior: SnackBarBehavior.floating,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(appLoc.insufficientInventory),
+                    elevation: 4,
+                    duration: const Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               });
               isUpdatingQuantity = true;
               quantityController.text = '$totalStock';
@@ -123,18 +137,27 @@ class ProductInfoDialog {
             }
           } else if (currentUser.businessType == 'manufacturing') {
             Product product = await ps.futureSingleProduct(
-                userId: currentUser.uid, productId: orderProduct.id);
-            var stock = await checkRawMaterialStock(product, currentUser,
-                orderProduct, quantityController.text, appLoc);
+              userId: currentUser.uid,
+              productId: orderProduct.id,
+            );
+            var stock = await checkRawMaterialStock(
+              product,
+              currentUser,
+              orderProduct,
+              quantityController.text,
+              appLoc,
+            );
             if (stock['stock'] != null && stock['stock']! < 0) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(appLoc.insufficientInventory),
-                  elevation: 4,
-                  duration: const Duration(seconds: 4),
-                  behavior: SnackBarBehavior.floating,
-                ));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(appLoc.insufficientInventory),
+                    elevation: 4,
+                    duration: const Duration(seconds: 4),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
               });
               isUpdatingQuantity = true;
               quantityController.text = '1';
@@ -180,7 +203,8 @@ class ProductInfoDialog {
         Future.delayed(Duration.zero, () {
           isApplyingDiscount = false;
         });
-        newItemValue = double.tryParse(quantityController.text)! *
+        newItemValue =
+            double.tryParse(quantityController.text)! *
             double.tryParse(priceController.text)!;
       }
     });
@@ -193,7 +217,8 @@ class ProductInfoDialog {
           isUpdatingPrice = true;
           isUpdatingPrice = false;
         }
-        newItemValue = double.tryParse(quantityController.text)! *
+        newItemValue =
+            double.tryParse(quantityController.text)! *
             double.tryParse(priceController.text)!;
       }
     });
@@ -205,236 +230,260 @@ class ProductInfoDialog {
       elevation: 1,
       backgroundColor: Colors.transparent,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          void updateItemValue() {
-            final quantity = double.tryParse(quantityController.text) ?? 0;
-            final price = double.tryParse(priceController.text) ?? 0;
-            if (context.mounted) {
-              setState(() {
-                newItemValue = quantity * price;
-              });
+        return StatefulBuilder(
+          builder: (context, setState) {
+            void updateItemValue() {
+              final quantity = double.tryParse(quantityController.text) ?? 0;
+              final price = double.tryParse(priceController.text) ?? 0;
+              if (context.mounted) {
+                setState(() {
+                  newItemValue = quantity * price;
+                });
+              }
             }
-          }
 
-          quantityController.addListener(updateItemValue);
-          discountController.addListener(updateItemValue);
-          priceController.addListener(updateItemValue);
+            quantityController.addListener(updateItemValue);
+            discountController.addListener(updateItemValue);
+            priceController.addListener(updateItemValue);
 
-          return SingleChildScrollView(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: StatefulBuilder(builder: (context, setState) {
-              return Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // ── Drag handle ──────────────────────────────────
-                    Container(
-                      width: 36,
-                      height: 4,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(2),
+            return SingleChildScrollView(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              child: StatefulBuilder(
+                builder: (context, setState) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
                       ),
                     ),
-
-                    // ── Header: name / total / save ──────────────────
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: MyText(
-                            text: orderProduct.name!.length > 22
-                                ? '${orderProduct.name!.substring(0, 22)}…'
-                                : orderProduct.name!,
-                            fontScale: responsive!.scaleFont(15),
-                            fontWeight: FontWeight.w600,
-                            softWrap: true,
+                        // ── Drag handle ──────────────────────────────────
+                        Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.4),
+                            borderRadius: BorderRadius.circular(2),
                           ),
                         ),
-                        SizedBox(width: responsive.scaleWidth(8)),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
+
+                        // ── Header: name / total / save ──────────────────
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            MyText(
-                              text: appLoc.total,
-                              fontScale: responsive.scaleFont(11),
-                            ),
-                            MyText(
-                              text: (newItemValue ?? 0).toStringAsFixed(2),
-                              fontScale: responsive.scaleFont(14),
-                              fontWeight: FontWeight.w600,
-                            ),
-                            // Inventory stock display — logic unchanged
-                            if (useInventory != null && useInventory)
-                              FutureBuilder<double>(
-                                future: currentUser.businessType == 'trading'
-                                    ? checkInventoryTotalTrading(
-                                        currentUser.uid!,
-                                        orderProduct.id!,
-                                        inventoryLoc)
-                                    : checkInventoryTotalManufacuturing(
-                                        currentUser,
-                                        appLoc,
-                                        orderProduct,
-                                        inventoryLoc),
-                                builder: (context, totalshot) {
-                                  if (totalshot.hasData) {
-                                    return MyText(
-                                      text:
-                                          '${appLoc.inventory}: ${totalshot.data!.toStringAsFixed(2)}',
-                                      fontScale: responsive.scaleFont(10),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                },
+                            Expanded(
+                              child: MyText(
+                                text: orderProduct.name!.length > 22
+                                    ? '${orderProduct.name!.substring(0, 22)}…'
+                                    : orderProduct.name!,
+                                fontScale: responsive!.scaleFont(15),
+                                fontWeight: FontWeight.w600,
+                                softWrap: true,
                               ),
+                            ),
+                            SizedBox(width: responsive.scaleWidth(8)),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                MyText(
+                                  text: appLoc.total,
+                                  fontScale: responsive.scaleFont(11),
+                                ),
+                                MyText(
+                                  text: (newItemValue ?? 0).toStringAsFixed(2),
+                                  fontScale: responsive.scaleFont(14),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                // Inventory stock display — logic unchanged
+                                if (useInventory != null && useInventory)
+                                  FutureBuilder<double>(
+                                    future:
+                                        currentUser.businessType == 'trading'
+                                        ? checkInventoryTotalTrading(
+                                            currentUser.uid!,
+                                            orderProduct.id!,
+                                            inventoryLoc,
+                                          )
+                                        : checkInventoryTotalManufacuturing(
+                                            currentUser,
+                                            appLoc,
+                                            orderProduct,
+                                            inventoryLoc,
+                                          ),
+                                    builder: (context, totalshot) {
+                                      if (totalshot.hasData) {
+                                        return MyText(
+                                          text:
+                                              '${appLoc.inventory}: ${totalshot.data!.toStringAsFixed(2)}',
+                                          fontScale: responsive.scaleFont(10),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    },
+                                  ),
+                              ],
+                            ),
+                            SizedBox(width: responsive.scaleWidth(10)),
+                            // Save button — same onPressed logic, restyled
+                            GestureDetector(
+                              onTap: () {
+                                if (quantityController.text.isEmpty) {
+                                  snackbarWidget.content =
+                                      appLoc.quantityCannotBeEmpty;
+                                  snackbarWidget.showSnack();
+                                }
+                                if (priceController.text.isEmpty) {
+                                  snackbarWidget.content =
+                                      appLoc.priceCannotBeEmpty;
+                                  snackbarWidget.showSnack();
+                                }
+                                OrderProducts newProduct = orderProduct;
+                                if (purchase) {
+                                  onSave(
+                                    newProduct.copyWith(
+                                      quantity: double.tryParse(
+                                        quantityController.text,
+                                      ),
+                                      cost: double.tryParse(
+                                        priceController.text,
+                                      ),
+                                      discount: double.tryParse(
+                                        discountController.text,
+                                      ),
+                                    ),
+                                  );
+                                } else {
+                                  onSave(
+                                    newProduct.copyWith(
+                                      quantity: double.tryParse(
+                                        quantityController.text,
+                                      ),
+                                      price: double.tryParse(
+                                        priceController.text,
+                                      ),
+                                      discount: double.tryParse(
+                                        discountController.text,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                GoRouter.of(context).pop();
+                              },
+                              child: Container(
+                                width: responsive.scaleWidth(36),
+                                height: responsive.scaleHeight(36),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.save_outlined,
+                                  size: responsive.scaleHeight(18),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        SizedBox(width: responsive.scaleWidth(10)),
-                        // Save button — same onPressed logic, restyled
-                        GestureDetector(
-                          onTap: () {
-                            if (quantityController.text.isEmpty) {
-                              snackbarWidget.content =
-                                  appLoc.quantityCannotBeEmpty;
-                              snackbarWidget.showSnack();
-                            }
-                            if (priceController.text.isEmpty) {
-                              snackbarWidget.content =
-                                  appLoc.priceCannotBeEmpty;
-                              snackbarWidget.showSnack();
-                            }
-                            OrderProducts newProduct = orderProduct;
-                            if (purchase) {
-                              onSave(newProduct.copyWith(
-                                quantity:
-                                    double.tryParse(quantityController.text),
-                                cost: double.tryParse(priceController.text),
-                                discount:
-                                    double.tryParse(discountController.text),
-                              ));
-                            } else {
-                              onSave(newProduct.copyWith(
-                                quantity:
-                                    double.tryParse(quantityController.text),
-                                price: double.tryParse(priceController.text),
-                                discount:
-                                    double.tryParse(discountController.text),
-                              ));
-                            }
-                            GoRouter.of(context).pop();
-                          },
-                          child: Container(
-                            width: responsive.scaleWidth(36),
-                            height: responsive.scaleHeight(36),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              Icons.save_outlined,
-                              size: responsive.scaleHeight(18),
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
+
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            vertical: responsive.scaleHeight(14),
+                          ),
+                          child: Divider(
+                            height: 0,
+                            thickness: 0.5,
+                            color: Theme.of(
+                              context,
+                            ).dividerColor.withValues(alpha: 0.3),
                           ),
                         ),
+
+                        // ── Quantity row ─────────────────────────────────
+                        _fieldRow(
+                          responsive: responsive,
+                          label: appLoc.itemQuantity,
+                          field: MyTextField(
+                            controller: quantityController,
+                            fontSize: responsive.scaleFont(14),
+                            isNumberKeyboard: true,
+                          ),
+                        ),
+
+                        SizedBox(height: responsive.scaleHeight(10)),
+
+                        // ── Price / Cost row ─────────────────────────────
+                        _fieldRow(
+                          responsive: responsive,
+                          label: purchase ? appLoc.cost : appLoc.price,
+                          trailing: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                priceController.text = orderProduct
+                                    .originalPrice
+                                    .toString();
+                                discountController.text = '0.0';
+                              });
+                            },
+                            child: Container(
+                              width: responsive.scaleWidth(26),
+                              height: responsive.scaleHeight(26),
+                              decoration: BoxDecoration(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Icon(
+                                Icons.restore,
+                                size: responsive.scaleHeight(14),
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ),
+                          field: MyTextField(
+                            controller: priceController,
+                            fontSize: responsive.scaleFont(14),
+                            isNumberKeyboard: true,
+                          ),
+                        ),
+
+                        // ── Discount row (non-purchase only) ─────────────
+                        if (!purchase) ...[
+                          SizedBox(height: responsive.scaleHeight(10)),
+                          _fieldRow(
+                            responsive: responsive,
+                            label: appLoc.discount,
+                            field: MyTextField(
+                              controller: discountController,
+                              fontSize: responsive.scaleFont(14),
+                              isNumberKeyboard: true,
+                              suffix: '%',
+                            ),
+                          ),
+                        ],
                       ],
                     ),
-
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                          vertical: responsive.scaleHeight(14)),
-                      child: Divider(
-                        height: 0,
-                        thickness: 0.5,
-                        color: Theme.of(context)
-                            .dividerColor
-                            .withValues(alpha: 0.3),
-                      ),
-                    ),
-
-                    // ── Quantity row ─────────────────────────────────
-                    _fieldRow(
-                      responsive: responsive,
-                      label: appLoc.itemQuantity,
-                      field: MyTextField(
-                        controller: quantityController,
-                        fontSize: responsive.scaleFont(14),
-                        isNumberKeyboard: true,
-                      ),
-                    ),
-
-                    SizedBox(height: responsive.scaleHeight(10)),
-
-                    // ── Price / Cost row ─────────────────────────────
-                    _fieldRow(
-                      responsive: responsive,
-                      label: purchase ? appLoc.cost : appLoc.price,
-                      trailing: GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            priceController.text =
-                                orderProduct.originalPrice.toString();
-                            discountController.text = '0.0';
-                          });
-                        },
-                        child: Container(
-                          width: responsive.scaleWidth(26),
-                          height: responsive.scaleHeight(26),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Icon(
-                            Icons.restore,
-                            size: responsive.scaleHeight(14),
-                            color:
-                                Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      field: MyTextField(
-                        controller: priceController,
-                        fontSize: responsive.scaleFont(14),
-                        isNumberKeyboard: true,
-                      ),
-                    ),
-
-                    // ── Discount row (non-purchase only) ─────────────
-                    if (!purchase) ...[
-                      SizedBox(height: responsive.scaleHeight(10)),
-                      _fieldRow(
-                        responsive: responsive,
-                        label: appLoc.discount,
-                        field: MyTextField(
-                          controller: discountController,
-                          fontSize: responsive.scaleFont(14),
-                          isNumberKeyboard: true,
-                          suffix: '%',
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              );
-            }),
-          );
-        });
+                  );
+                },
+              ),
+            );
+          },
+        );
       },
     );
   }
@@ -452,10 +501,7 @@ class ProductInfoDialog {
         Expanded(
           child: Row(
             children: [
-              Text(
-                label,
-                style: TextStyle(fontSize: responsive.scaleFont(14)),
-              ),
+              Text(label, style: TextStyle(fontSize: responsive.scaleFont(14))),
               if (trailing != null) ...[
                 SizedBox(width: responsive.scaleWidth(6)),
                 trailing,
@@ -475,10 +521,16 @@ class ProductInfoDialog {
   // ── All logic methods — completely unchanged ───────────────────────────────
 
   Future<bool> checkIfInventoryIsAvailable(
-      String uid, String productId, String quantity, String location) async {
+    String uid,
+    String productId,
+    String quantity,
+    String location,
+  ) async {
     ProductService ps = ProductService();
-    Product product =
-        await ps.futureSingleProduct(userId: uid, productId: productId);
+    Product product = await ps.futureSingleProduct(
+      userId: uid,
+      productId: productId,
+    );
     if (product.inventory != null &&
         product.inventory!.containsKey(location) &&
         product.inventory![location] != null) {
@@ -492,11 +544,16 @@ class ProductInfoDialog {
   }
 
   Future<double> checkInventoryTotalTrading(
-      String uid, String productId, String location) async {
+    String uid,
+    String productId,
+    String location,
+  ) async {
     try {
       ProductService ps = ProductService();
-      Product product =
-          await ps.futureSingleProduct(userId: uid, productId: productId);
+      Product product = await ps.futureSingleProduct(
+        userId: uid,
+        productId: productId,
+      );
       if (product.inventory != null &&
           product.inventory!.containsKey(location) &&
           product.inventory![location] != null) {
@@ -519,14 +576,20 @@ class ProductInfoDialog {
       ProductService ps = ProductService();
       double leastStock = -1;
       Product product = await ps.futureSingleProduct(
-          userId: user.uid, productId: orderProduct.id);
+        userId: user.uid,
+        productId: orderProduct.id,
+      );
       if (product.receipeId != null && product.receipeId!.isNotEmpty) {
         var receipe = await ps.futureSingleReceipe(
-            userId: user.uid!, receipeId: product.receipeId!);
+          userId: user.uid!,
+          receipeId: product.receipeId!,
+        );
         if (receipe.ingredients != null && receipe.ingredients!.isNotEmpty) {
           for (var ingredient in receipe.ingredients!) {
             var rawItem = await ps.futureSingleRawItem(
-                userId: user.uid!, rawItemId: ingredient.uid!);
+              userId: user.uid!,
+              rawItemId: ingredient.uid!,
+            );
             if (rawItem.inventory != null && rawItem.inventory!.isNotEmpty) {
               double availableStock = rawItem.inventory![storeLocation] ?? 0;
               double ingredientQtyPerUnit = ingredient.quantity ?? 1.0;
@@ -629,7 +692,9 @@ class ProductInfoDialog {
 
     if (product.receipeId != null && product.receipeId!.isNotEmpty) {
       var receipe = await ps.futureSingleReceipe(
-          userId: user.uid!, receipeId: product.receipeId!);
+        userId: user.uid!,
+        receipeId: product.receipeId!,
+      );
 
       if (receipe.ingredients != null && receipe.ingredients!.isNotEmpty) {
         if (quantity.isEmpty || quantity == '0') quantity = '1';
@@ -637,7 +702,9 @@ class ProductInfoDialog {
 
         for (var ingredient in receipe.ingredients!) {
           var rawItem = await ps.futureSingleRawItem(
-              userId: user.uid!, rawItemId: ingredient.uid!);
+            userId: user.uid!,
+            rawItemId: ingredient.uid!,
+          );
 
           if (rawItem.inventory != null &&
               rawItem.inventory!.isNotEmpty &&
