@@ -10,6 +10,7 @@ import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
 import 'package:business_manager_web_ui/src/app/widgets/dialog/deletion_dialog.dart';
+import 'package:business_manager_web_ui/src/app/widgets/dialog/premium_access_sheet.dart';
 import 'package:business_manager_web_ui/src/app/widgets/viewer/date_dropdown.dart'
     show PeriodDropdown;
 import 'package:business_manager_web_ui/src/models/client_statement.dart';
@@ -672,11 +673,26 @@ class _OrderViewState extends ConsumerState<OrderView>
   // app-store rating-prompt tracking dropped here — RevenueCat isn't wired
   // up for web yet and rating prompts are a mobile-store-only concern.
   // Always navigates straight to addOrder for now.
+  // Mirrors mobile's own free-tier limit: non-subscribed users can create
+  // up to 19 orders; the 20th+ triggers the paywall sheet instead of the
+  // add form. Subscribed users have no limit.
   Widget _floatingButtonWidget() {
     return Padding(
       padding: EdgeInsets.only(bottom: responsive!.scaleHeight(40)),
       child: FloatingActionButton(
         onPressed: () {
+          if ((currentUser?.isSubscribed != true) &&
+              currentOrders.length > 19) {
+            PremiumAccessSheet.show(
+              context: context,
+              uid: widget.uid,
+              message: appLoc!.subscriptionOrderFeature(
+                appLoc!.orders,
+                currentOrders.length.toString(),
+              ),
+            );
+            return;
+          }
           GoRouter.of(
             context,
           ).pushNamed('addOrder', pathParameters: {'uid': widget.uid!});

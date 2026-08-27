@@ -6,6 +6,7 @@ import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget
 import 'package:business_manager_web_ui/src/app/widgets/Text/flush_text_field.dart';
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
+import 'package:business_manager_web_ui/src/app/widgets/dialog/premium_access_sheet.dart';
 import 'package:business_manager_web_ui/src/models/user_model.dart';
 import 'package:business_manager_web_ui/src/services/database_service.dart';
 import 'package:flutter/material.dart';
@@ -940,13 +941,21 @@ class _ProductScreenState extends ConsumerState<ProductScreen>
     }
   }
 
-  // Subscription paywall gating (products.length > 9 -> PremiumAccessSheet)
-  // dropped here — RevenueCat isn't wired up for web yet. Every user can add
-  // freely for now; the gate can come back once web billing is sorted out.
+  // Mirrors mobile's own free-tier limit: non-subscribed users can add up
+  // to 9 products; the 10th+ triggers the paywall sheet instead of the add
+  // form. Subscribed users have no limit.
   Widget _floatingButtonWidget(UserDetails? user, List<Product> products) {
     return FloatingActionButton(
       onPressed: () {
         if (widget.uid != null) {
+          if ((user?.isSubscribed != true) && products.length > 9) {
+            PremiumAccessSheet.show(
+              context: context,
+              uid: widget.uid,
+              message: appLoc!.productsLimit,
+            );
+            return;
+          }
           GoRouter.of(context)
               .pushNamed('addProduct', pathParameters: {'uid': widget.uid!})
               .then((_) {

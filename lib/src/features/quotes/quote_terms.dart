@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
@@ -31,8 +32,9 @@ import '../../models/product_model.dart';
 
 /// Mirrors OrderTerms' own deviations from mobile:
 /// - No local push-notification reminders (no web equivalent).
-/// - Quote-margins premium blur/paywall dropped; shown unlocked, matching
-///   orderStatistics().
+/// - Quote-margins premium blur/paywall IS gated behind `isSubscribed`, like
+///   `orderStatistics()` in order_terms.dart — same call now that a real web
+///   subscribe flow exists.
 /// - PDF save/open replaced with a direct Storage upload + new-tab open,
 ///   reusing StorageService.uploadPdfToStorage (no temp file/native viewer).
 class QuoteTerms extends StatefulWidget {
@@ -713,106 +715,155 @@ class _QuoteTermsState extends State<QuoteTerms> {
     );
   }
 
-  // ── Quote statistics — logic unchanged, container restyled ────────────────
+  // ── Quote statistics — logic unchanged, container restyled. Gated behind
+  // subscription like mobile, now that a real web subscribe flow exists:
+  // blur overlay + informational message (no tap-through here, matching
+  // mobile's own quoteStatistics — unlike order margins, this one has no
+  // GestureDetector on mobile either). ───────────────────────────────────
 
   Widget quoteStatistics() {
     final marginPercentage = _calculateMarginPercentage(quote.orderedProducts);
     final marginColor = _getMarginColor(marginPercentage);
+    final isSubscribed = currentUser.isSubscribed == true;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(appLoc!.quoteMargins),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-              width: 0.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              _infoRow(
-                label: appLoc!.totalValue,
-                value:
-                    '$currency${calculateTotalPrice(quote.orderedProducts).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.totalCost,
-                value:
-                    '$currency${calculateTotalCost(quote.orderedProducts).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.grossProfit,
-                value:
-                    '$currency${(calculateTotalPrice(quote.orderedProducts) - calculateTotalCost(quote.orderedProducts)).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.margin,
-                value: _formatMarginPercentage(marginPercentage),
-              ),
-              // Margin progress bar — unchanged logic
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: responsive!.scaleWidth(14),
-                  vertical: responsive!.scaleHeight(8),
+        Stack(
+          children: [
+            _quoteMarginsCard(marginPercentage, marginColor),
+            if (!isSubscribed) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Container(
+                    height: responsive!.scaleHeight(220),
+                    width: double.infinity,
+                    color: Colors.black.withValues(alpha: 0.1),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: marginPercentage.clamp(0, 100).round(),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: marginColor,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 100 - marginPercentage.clamp(0, 100).round(),
-                            child: const SizedBox.shrink(),
-                          ),
-                        ],
-                      ),
+              ),
+              Positioned(
+                top: responsive!.scaleHeight(90),
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.blueGrey.withValues(alpha: 0.9),
                     ),
-                    const SizedBox(height: 6),
-                    _buildColorLegend(),
-                  ],
+                    padding: EdgeInsets.symmetric(
+                      horizontal: responsive!.scaleWidth(20),
+                      vertical: responsive!.scaleHeight(10),
+                    ),
+                    child: MyText(
+                      text: appLoc!.subscribeToAccess,
+                      align: TextAlign.center,
+                      fontColor: Colors.white,
+                      fontScale: responsive!.scaleFont(13),
+                    ),
+                  ),
                 ),
               ),
             ],
-          ),
+          ],
         ),
         SizedBox(height: responsive!.scaleHeight(40)),
       ],
+    );
+  }
+
+  Widget _quoteMarginsCard(double marginPercentage, Color marginColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          _infoRow(
+            label: appLoc!.totalValue,
+            value:
+                '$currency${calculateTotalPrice(quote.orderedProducts).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.totalCost,
+            value:
+                '$currency${calculateTotalCost(quote.orderedProducts).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.grossProfit,
+            value:
+                '$currency${(calculateTotalPrice(quote.orderedProducts) - calculateTotalCost(quote.orderedProducts)).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.margin,
+            value: _formatMarginPercentage(marginPercentage),
+          ),
+          // Margin progress bar — unchanged logic
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: responsive!.scaleWidth(14),
+              vertical: responsive!.scaleHeight(8),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: marginPercentage.clamp(0, 100).round(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: marginColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 100 - marginPercentage.clamp(0, 100).round(),
+                        child: const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _buildColorLegend(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 

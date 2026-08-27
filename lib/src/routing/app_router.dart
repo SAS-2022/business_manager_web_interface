@@ -60,6 +60,7 @@ import 'package:business_manager_web_ui/src/features/sales/order_terms.dart';
 import 'package:business_manager_web_ui/src/features/sales/orders_screen.dart';
 import 'package:business_manager_web_ui/src/features/sales/orders_view.dart';
 import 'package:business_manager_web_ui/src/features/settings/settings_screen.dart';
+import 'package:business_manager_web_ui/src/features/subscription/subscribe_screen.dart';
 import 'package:business_manager_web_ui/src/routing/app_shell.dart';
 import 'package:go_router/go_router.dart';
 
@@ -620,6 +621,15 @@ final goRouter = GoRouter(
       name: 'contactUsId',
       path: '/contactUsId/:uid',
       builder: (context, state) => ContactUs(uid: state.pathParameters['uid']),
+    ),
+    // Subscribe — RevenueCat Web Billing paywall. Reached from Settings'
+    // header badge (see settings_screen.dart) and from any isSubscribed-gated
+    // feature that wants to send a non-subscribed user here.
+    GoRoute(
+      name: 'subscribe',
+      path: '/subscribe/:uid',
+      builder: (context, state) =>
+          SubscribeScreen(uid: state.pathParameters['uid']),
     ),
   ],
 );

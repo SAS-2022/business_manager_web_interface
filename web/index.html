@@ -46,6 +46,19 @@
        browser via http.get()). -->
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAztLZN9WAJrZiTMvi9PMkmv7JU8VfSiK0" async></script>
 
+  <!-- RevenueCat Web Billing SDK (@revenuecat/purchases-js) — the package is
+       npm/bundler-only (no CDN/UMD build of its own), so this loads it as a
+       real ES module from esm.sh (which builds a browser-ready bundle from
+       any npm package on the fly) and hangs the exports off `window` so the
+       Dart side (revenuecat_web.dart) can reach them via plain @JS interop,
+       the same bridging approach used for Google Maps above. Configuration
+       (API key, appUserId) happens from Dart at subscribe-screen load time,
+       not here — this only makes the SDK itself reachable. -->
+  <script type="module">
+    import { Purchases, ErrorCode, PurchasesError } from 'https://esm.sh/@revenuecat/purchases-js@latest';
+    window.RevenueCatPurchases = { Purchases, ErrorCode, PurchasesError };
+  </script>
+
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 

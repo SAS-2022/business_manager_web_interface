@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'dart:ui';
 
 import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/animations/loading_animation.dart';
@@ -16,6 +17,7 @@ import 'package:business_manager_web_ui/src/app/utils/pdf_generators/sales_invoi
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text_field.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
+import 'package:business_manager_web_ui/src/app/widgets/dialog/premium_access_sheet.dart';
 import 'package:business_manager_web_ui/src/app/widgets/dialog/warning_dialog.dart';
 import 'package:business_manager_web_ui/src/models/client_model.dart';
 import 'package:business_manager_web_ui/src/models/client_statement.dart';
@@ -37,21 +39,22 @@ import '../../app/theme/responsive_utils.dart';
 import '../../models/product_model.dart';
 
 /// Stage 10 scope: delivery scheduling, terms & conditions, delivery/sales
-/// charges, payment-reminder info card, save. Dropped vs. mobile:
+/// charges, payment-reminder info card, save, invoice generation. Dropped
+/// vs. mobile:
 /// - Local push-notification reminders (`notification_service.dart`,
 ///   `app_settings` deep link) — no web equivalent, and mobile only ever
 ///   shows this UI to subscribed users anyway (see below).
-/// - The reminder *toggles* in `assignReminder`/`paymentReminders` — both are
-///   gated behind `currentUser.isSubscribed` on mobile too; since web has no
-///   subscription flow yet, a "locked, tap to subscribe" icon would dead-end.
-///   `assignReminder()` had no other content when unsubscribed, so it's
-///   dropped entirely; `paymentReminders()` keeps its informational card.
-/// - Invoice generation/printing (`generateInvoice`, `printSalesInvoice`,
-///   `sales_invoice_pdf.dart`, `save_files.dart`, `open_app_file`,
-///   `syncfusion_flutter_pdf`) and order statistics (`orderStatistics`) —
-///   deferred to a later stage; needs a PDF-library feasibility check.
-/// - Inventory/raw-material stock deduction on invoice — only reachable from
-///   the deferred invoice flow above.
+/// - The reminder *toggle* in `assignReminder` — still not built (a real
+///   missing feature, not just a gate — mobile shows nothing there for a
+///   non-subscribed user either, so there was no unsubscribed-state UI to
+///   carry over); `paymentReminders()` keeps its informational card only.
+///   `orderStatistics()` (order margins), by contrast, IS gated the same way
+///   mobile gates it now that a real web subscribe flow exists: blur overlay
+///   + tap-to-subscribe (`PremiumAccessSheet`) for non-subscribed users.
+/// - Stock-availability check + inventory/raw-material deduction on invoice
+///   (`_checkStockAvailablility`/`deductQuantityFromInventory` on mobile) —
+///   ported into `printSalesInvoice`, gated behind `isSubscribed` +
+///   `useInventory` exactly like mobile.
 class OrderTerms extends StatefulWidget {
   const OrderTerms({super.key, this.uid, this.orderId});
   final String? uid;
@@ -1032,109 +1035,162 @@ class _OrderTermsState extends State<OrderTerms> {
   }
 
   // ── Order statistics — logic unchanged; mobile blurs this card behind a
-  // subscription paywall (PremiumAccessSheet) for non-subscribed users. Web
-  // has no subscribe flow to unlock into, so — same call made for every
-  // other paywalled surface in this port — it's shown unlocked instead of
-  // dead-ending on a paywall with nothing behind it. ──────────────────────
+  // subscription paywall (PremiumAccessSheet) for non-subscribed users. Now
+  // that a real web subscribe flow exists (subscribe_screen.dart), this is
+  // gated the same way — blur overlay + tap-to-subscribe message. ─────────
 
   Widget orderStatistics() {
     final marginPercentage = _calculateMarginPercentage(order.orderedProducts);
     final marginColor = _getMarginColor(marginPercentage);
+    final isSubscribed = currentUser.isSubscribed == true;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionLabel(appLoc!.orderMargins),
-        Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
-              width: 0.5,
-            ),
-          ),
-          child: Column(
-            children: [
-              _infoRow(
-                label: appLoc!.totalValue,
-                value:
-                    '$currency${calculateTotalPrice(order.orderedProducts).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.totalCost,
-                value:
-                    '$currency${calculateTotalCost(order.orderedProducts).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.grossProfit,
-                value:
-                    '$currency${(calculateTotalPrice(order.orderedProducts) - calculateTotalCost(order.orderedProducts)).toStringAsFixed(2)}',
-              ),
-              Divider(
-                height: 0,
-                thickness: 0.5,
-                indent: responsive!.scaleWidth(14),
-                color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
-              ),
-              _infoRow(
-                label: appLoc!.margin,
-                value: _formatMarginPercentage(marginPercentage),
-              ),
-              // Margin progress bar — unchanged logic
-              Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: responsive!.scaleWidth(14),
-                  vertical: responsive!.scaleHeight(8),
+        Stack(
+          children: [
+            _orderMarginsCard(marginPercentage, marginColor),
+            if (!isSubscribed) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                  child: Container(
+                    height: responsive!.scaleHeight(220),
+                    width: double.infinity,
+                    color: Colors.black.withValues(alpha: 0.1),
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            flex: marginPercentage.clamp(0, 100).round(),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: marginColor,
-                                borderRadius: BorderRadius.circular(2),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 100 - marginPercentage.clamp(0, 100).round(),
-                            child: const SizedBox.shrink(),
-                          ),
-                        ],
+              ),
+              Positioned(
+                top: responsive!.scaleHeight(90),
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: GestureDetector(
+                    onTap: () => PremiumAccessSheet.show(
+                      context: context,
+                      uid: widget.uid,
+                      message: appLoc!.subscriptionFeature(
+                        appLoc!.orderMargins,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    _buildColorLegend(),
-                  ],
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.blueGrey.withValues(alpha: 0.9),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: responsive!.scaleWidth(20),
+                        vertical: responsive!.scaleHeight(10),
+                      ),
+                      child: MyText(
+                        text: appLoc!.subscribeToAccess,
+                        align: TextAlign.center,
+                        fontColor: Colors.white,
+                        fontScale: responsive!.scaleFont(13),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ],
-          ),
+          ],
         ),
         SizedBox(height: responsive!.scaleHeight(40)),
       ],
+    );
+  }
+
+  Widget _orderMarginsCard(double marginPercentage, Color marginColor) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
+          width: 0.5,
+        ),
+      ),
+      child: Column(
+        children: [
+          _infoRow(
+            label: appLoc!.totalValue,
+            value:
+                '$currency${calculateTotalPrice(order.orderedProducts).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.totalCost,
+            value:
+                '$currency${calculateTotalCost(order.orderedProducts).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.grossProfit,
+            value:
+                '$currency${(calculateTotalPrice(order.orderedProducts) - calculateTotalCost(order.orderedProducts)).toStringAsFixed(2)}',
+          ),
+          Divider(
+            height: 0,
+            thickness: 0.5,
+            indent: responsive!.scaleWidth(14),
+            color: Theme.of(context).dividerColor.withValues(alpha: 0.25),
+          ),
+          _infoRow(
+            label: appLoc!.margin,
+            value: _formatMarginPercentage(marginPercentage),
+          ),
+          // Margin progress bar — unchanged logic
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: responsive!.scaleWidth(14),
+              vertical: responsive!.scaleHeight(8),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: marginPercentage.clamp(0, 100).round(),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: marginColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        flex: 100 - marginPercentage.clamp(0, 100).round(),
+                        child: const SizedBox.shrink(),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                _buildColorLegend(),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -1569,12 +1625,11 @@ class _OrderTermsState extends State<OrderTerms> {
     return int.tryParse(days) ?? 0;
   }
 
-  // Mobile's version also runs a stock-availability check and deducts
-  // inventory/raw-material stock before invoicing, but both are gated
-  // behind `currentUser.isSubscribed` (`_checkStockAvailablility` returns
-  // true immediately, and `deductQuantityFromInventory` is never called,
-  // for any non-subscribed user) — since web has no subscription flow, that
-  // whole block is unreachable dead weight here and is dropped. Mobile's
+  // Runs a stock-availability check and deducts inventory/raw-material
+  // stock before invoicing, exactly like mobile — both
+  // `_checkStockAvailablility` and `deductQuantityFromInventory` below are
+  // themselves gated behind `currentUser.isSubscribed` + `useInventory`, so
+  // this is a no-op for any non-subscribed/non-inventory user. Mobile's
   // "save to a local temp file, upload that file, open the native viewer"
   // (SaveFiles.savePdf + OpenAppFile.open) becomes "upload the in-memory
   // bytes directly (putData needs no temp file), then open the resulting
@@ -1623,6 +1678,21 @@ class _OrderTermsState extends State<OrderTerms> {
       },
       timeoutDuration: const Duration(seconds: 30),
     );
+    if (order.invoiceUrl == null) {
+      var result = await _checkStockAvailablility();
+      if (!result) {
+        snackbarWidget.content = appLoc!.noStockAvailableInLocation;
+        snackbarWidget.showSnack();
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            ProgressManager.completeLoading();
+          });
+        }
+        return;
+      }
+      await deductQuantityFromInventory();
+    }
     StringBuffer termsAndConditions = StringBuffer();
     if (deliveryController.text.isNotEmpty) {
       order.deliveryTerms = deliveryController.text;
@@ -1689,4 +1759,173 @@ class _OrderTermsState extends State<OrderTerms> {
       });
     }
   }
+
+  // ── Inventory/raw-material stock check + deduction — ported from mobile's
+  // order_terms.dart, byte-for-byte logic. Both are no-ops for a
+  // non-subscribed user, a user with `useInventory` off, or a service
+  // business (nothing to deduct). ─────────────────────────────────────────
+
+  Future<bool> _checkStockAvailablility() async {
+    bool isAvailable = true;
+    if (currentUser.isSubscribed == null || currentUser.isSubscribed == false) {
+      return true;
+    }
+    if (currentUser.useInventory == null || currentUser.useInventory == false) {
+      return true;
+    }
+    if (currentUser.businessType == 'service') return true;
+    for (var product in order.orderedProducts!.values) {
+      if (product.id != null && product.quantity != null) {
+        var result = await ps.futureSingleProduct(
+          userId: widget.uid,
+          productId: product.id!,
+        );
+        if (currentUser.businessType == 'trading') {
+          if (result.inventory != null &&
+              result.inventory!.containsKey(order.storeLocation)) {
+            isAvailable =
+                product.quantity! <= result.inventory![order.storeLocation]!;
+          } else {
+            isAvailable = false;
+          }
+        } else if (currentUser.businessType == 'manufacturing') {
+          isAvailable = await checkRawMaterialStock(result, product.quantity!);
+        } else {
+          return true;
+        }
+      }
+    }
+    return isAvailable;
+  }
+
+  Future<void> deductQuantityFromInventory() async {
+    if (currentUser.isSubscribed == null || currentUser.isSubscribed == false) {
+      return;
+    }
+    if (currentUser.useInventory == null || currentUser.useInventory == false) {
+      return;
+    }
+    if (currentUser.businessType == 'service') return;
+    for (var product in order.orderedProducts!.values) {
+      if (product.id != null && product.quantity != null) {
+        var result = await ps.futureSingleProduct(
+          userId: widget.uid,
+          productId: product.id!,
+        );
+        if (currentUser.businessType == 'trading') {
+          if (result.inventory != null &&
+              result.inventory!.containsKey(order.storeLocation)) {
+            double currentStock = result.inventory![order.storeLocation]!;
+            double newStock = currentStock - product.quantity!;
+            result.inventory![order.storeLocation!] = newStock < 0
+                ? 0
+                : newStock;
+            await ps.updateProduct(widget.uid!, result);
+          }
+        } else if (currentUser.businessType == 'manufacturing') {
+          await deductRawMaterialStock(result, product.quantity!);
+        }
+      }
+    }
+  }
+
+  Future<bool> checkRawMaterialStock(Product product, double quantity) async {
+    bool stock = false;
+    Map<String, double> requiredMaterials = {};
+    if (product.receipeId != null && product.receipeId!.isNotEmpty) {
+      var receipe = await ps.futureSingleReceipe(
+        userId: widget.uid!,
+        receipeId: product.receipeId!,
+      );
+      if (receipe.ingredients != null && receipe.ingredients!.isNotEmpty) {
+        for (var ingredient in receipe.ingredients!) {
+          var rawItem = await ps.futureSingleRawItem(
+            userId: widget.uid!,
+            rawItemId: ingredient.uid!,
+          );
+          if (rawItem.inventory != null &&
+              rawItem.inventory!.isNotEmpty &&
+              rawItem.inventory!.containsKey(order.storeLocation)) {
+            double availableStock =
+                rawItem.inventory![order.storeLocation] ?? 0;
+            if (ingredient.unit?.toLowerCase() != rawItem.unit?.toLowerCase()) {
+              var convertedRate =
+                  rawItem.conversion![ingredient.unit?.toLowerCase()]?.rate;
+              var originalRate = ingredient.quantity! / convertedRate!;
+              ingredient.quantity = originalRate * quantity;
+            }
+            double requiredQuantity = ingredient.quantity!;
+            double remainingStock = availableStock - requiredQuantity >= 0
+                ? availableStock - requiredQuantity
+                : -1;
+            requiredMaterials[ingredient.name!] = remainingStock;
+          } else {
+            snackbarWidget.content = appLoc!.noStockAvailableInLocation;
+            snackbarWidget.showSnack();
+            stock = false;
+          }
+        }
+      }
+    }
+    if (requiredMaterials.containsValue(-1)) {
+      var key = requiredMaterials.keys.firstWhere(
+        (k) => requiredMaterials[k] == -1,
+      );
+      snackbarWidget.content = appLoc!.insufficientStockFor(
+        key,
+        order.storeLocation!,
+      );
+      snackbarWidget.showSnack();
+      stock = false;
+    } else {
+      stock = true;
+    }
+    return stock;
+  }
+
+  Future<void> deductRawMaterialStock(Product product, double quantity) async {
+    RawItem rawItem = RawItem();
+    if (product.receipeId != null && product.receipeId!.isNotEmpty) {
+      var receipe = await ps.futureSingleReceipe(
+        userId: widget.uid!,
+        receipeId: product.receipeId!,
+      );
+      if (receipe.ingredients != null && receipe.ingredients!.isNotEmpty) {
+        for (var ingredient in receipe.ingredients!) {
+          rawItem = await ps.futureSingleRawItem(
+            userId: widget.uid!,
+            rawItemId: ingredient.uid!,
+          );
+          if (rawItem.inventory != null &&
+              rawItem.inventory!.isNotEmpty &&
+              rawItem.inventory!.containsKey(order.storeLocation)) {
+            double availableStock =
+                rawItem.inventory![order.storeLocation] ?? 0;
+            double requiredQuantity = 0;
+            if (ingredient.unit?.toLowerCase() != rawItem.unit?.toLowerCase()) {
+              var convertedRate =
+                  rawItem.conversion![ingredient.unit?.toLowerCase()]?.rate;
+              var originalRate = ingredient.quantity! / convertedRate!;
+              ingredient.quantity = originalRate * quantity;
+              requiredQuantity = originalRate * quantity;
+            } else {
+              requiredQuantity = ingredient.quantity! * quantity;
+            }
+            if (availableStock - requiredQuantity >= 0) {
+              var remaining = availableStock - requiredQuantity;
+              remaining = remaining < 0 ? 0 : roundToTwoDecimals(remaining);
+              rawItem.inventory![order.storeLocation!] = remaining;
+              await ps.editRawItem(widget.uid!, rawItem);
+            }
+          } else {
+            snackbarWidget.content = appLoc!.noStockAvailableInLocation;
+            snackbarWidget.showSnack();
+          }
+        }
+      }
+    }
+  }
+
+  double roundToTwoDecimals(double value) =>
+      double.parse(value.toStringAsFixed(2));
 }
