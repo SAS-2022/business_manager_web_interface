@@ -16,6 +16,8 @@ class FlushTextField extends StatefulWidget {
     this.fontSize = 14.0,
     this.maxLength,
     this.lines,
+    this.onSubmitted,
+    this.textInputAction,
   });
 
   final TextEditingController controller;
@@ -26,6 +28,11 @@ class FlushTextField extends StatefulWidget {
   final double fontSize;
   final int? maxLength;
   final int? lines;
+  // Fires on Enter (or the on-screen keyboard's action key). Callers use
+  // this to submit the form the field belongs to, so pressing Enter
+  // anywhere in e.g. the login form works the same as clicking Login.
+  final ValueChanged<String>? onSubmitted;
+  final TextInputAction? textInputAction;
 
   @override
   State<FlushTextField> createState() => _FlushTextFieldState();
@@ -67,6 +74,8 @@ class _FlushTextFieldState extends State<FlushTextField> {
       textCapitalization: widget.textCapitalization,
       maxLength: widget.maxLength,
       maxLines: widget.lines ?? 1,
+      textInputAction: widget.textInputAction,
+      onSubmitted: widget.onSubmitted,
       buildCounter: widget.maxLength != null
           ? (
               context, {

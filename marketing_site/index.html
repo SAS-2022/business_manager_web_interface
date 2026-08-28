@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       This is a plain static HTML/CSS/JS page — deliberately NOT part of
+       the Flutter app. It exists so the marketing landing page at
+       costera.biz is genuinely crawlable (real DOM text) instead of living
+       inside the Flutter web build, which renders everything to a
+       <canvas> (see the SEO discussion this was born from). The actual
+       app is meant to live at a separate subdomain (app.costera.biz,
+       pending hosting/DNS setup) — every Login/Register/Get Started link
+       below points there. This page intentionally has zero build step:
+       no bundler, no framework, so it's deployable as-is to any static
+       host (Firebase Hosting as a second site target, Netlify, S3+CDN,
+       GitHub Pages, ...).
+
+       Content/copy is mirrored from lib/src/features/landing/landing_page.dart
+       (the Flutter version, still used for signed-out visitors who land
+       inside the app directly, e.g. via a bookmarked app.costera.biz URL).
+       Keep the two in sync by hand when the pitch changes — see that
+       file's own doc comment for the reverse pointer.
+       ══════════════════════════════════════════════════════════════════ -->
+
+  <title>CostEra — All-In-One Business Management Software</title>
+  <meta name="description" content="CostEra is the all-in-one workspace for orders, quotes, inventory, purchases, and financial reports — built for retail, manufacturing, and service businesses. Start free.">
+  <meta name="keywords" content="business management software, small business software, inventory management, order management, quote management, purchase orders, financial reports, business manager app">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="CostEra">
+  <link rel="canonical" href="https://costera.biz/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="CostEra">
+  <meta property="og:title" content="CostEra — All-In-One Business Management Software">
+  <meta property="og:description" content="Orders, quotes, purchases, inventory, and financial reports — all in one place. Built for retail, manufacturing, and service businesses.">
+  <meta property="og:url" content="https://costera.biz/">
+  <!-- A real 1200×630 share card (logo, headline, feature chips) — built
+       as an HTML page and rendered to PNG via Playwright, not hand-drawn
+       or a cropped app icon. Regenerate the same way (see README.md) if
+       the branding/copy changes. -->
+  <meta property="og:image" content="https://costera.biz/assets/social-preview.png">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CostEra — All-In-One Business Management Software">
+  <meta name="twitter:description" content="Orders, quotes, purchases, inventory, and financial reports — all in one place. Built for retail, manufacturing, and service businesses.">
+  <meta name="twitter:image" content="https://costera.biz/assets/social-preview.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CostEra",
+    "url": "https://costera.biz/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "CostEra is the all-in-one workspace for orders, quotes, inventory, purchases, and financial reports — built for retail, manufacturing, and service businesses.",
+    "offers": [
+      { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+      { "@type": "Offer", "name": "Premium — Monthly", "price": "14.99", "priceCurrency": "USD" },
+      { "@type": "Offer", "name": "Premium — Annual", "price": "98.90", "priceCurrency": "USD" }
+    ]
+  }
+  </script>
+
+  <meta name="theme-color" content="#2E5C82">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+
+  <style>
+    :root {
+      --primary: #000000;
+      --on-primary: #ffffff;
+      --accent: #2E5C82;        /* "Monthly" premium-card color — matches
+                                    the Flutter app's colorScheme.secondaryFixed */
+      --bg: #ffffff;
+      --surface: #f4f6f9;
+      --border: rgba(0, 0, 0, 0.1);
+      --text: #14171a;
+      --text-secondary: #5b6470;
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --max-catalog: 1280px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    .container {
+      max-width: var(--max-catalog);
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+    @media (max-width: 900px) {
+      .container { padding: 0 20px; }
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────── */
+    header.site-header {
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      border-bottom: 0.5px solid var(--border);
+      z-index: 100;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      padding: 14px 0;
+      gap: 28px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+    .brand img { width: 32px; height: 32px; border-radius: 8px; }
+    nav.main-nav { display: flex; gap: 28px; margin-left: 12px; }
+    nav.main-nav a { font-size: 14px; font-weight: 500; }
+    nav.main-nav a:hover { opacity: 0.7; }
+    .header-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s ease, background-color 0.25s ease;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-text { padding: 8px 12px; font-size: 14px; background: transparent; color: var(--text); }
+    .btn-primary { padding: 10px 18px; font-size: 13px; background: var(--primary); color: var(--on-primary); }
+    .btn-outline { padding: 15px 26px; font-size: 15px; background: transparent; color: var(--text); border: 1px solid var(--border); border-radius: var(--radius-md); }
+    .btn-large { padding: 15px 26px; font-size: 15px; background: var(--primary); color: var(--on-primary); border-radius: var(--radius-md); }
+
+    @media (max-width: 900px) {
+      nav.main-nav { display: none; }
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────────── */
+    .hero {
+      padding: 72px 0;
+    }
+    .hero .container {
+      display: flex;
+      align-items: center;
+      gap: 56px;
+    }
+    .hero-text { flex: 5; min-width: 0; }
+    .hero-image { flex: 4; min-width: 0; }
+    .eyebrow-pill {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--primary);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    h1 {
+      font-size: 40px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 20px 0 16px;
+    }
+    .hero-text p.lead {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin: 0 0 28px;
+      max-width: 46ch;
+    }
+    .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+
+    @media (max-width: 900px) {
+      .hero .container { flex-direction: column; align-items: stretch; }
+      h1 { font-size: 28px; }
+    }
+
+    /* ── Mock illustrations (plain CSS, no images needed) ──────────── */
+    .mock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+    }
+    .mock-dots { display: flex; gap: 6px; margin-bottom: 18px; }
+    .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-tile {
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .mock-bars { display: flex; align-items: flex-end; justify-content: space-evenly; gap: 6px; height: 100%; min-height: 160px; }
+    .mock-bar { flex: 1; border-radius: 4px; background: var(--accent); }
+    .mock-row { display: flex; gap: 14px; margin-top: 14px; height: 130px; }
+    .mock-stats-col { flex: 2; display: flex; flex-direction: column; gap: 14px; }
+    .mock-stat-value { font-size: 18px; font-weight: 700; color: var(--accent); }
+    .mock-stat-label { font-size: 11px; color: #666; margin-top: 2px; }
+
+    .order-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .order-row .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+    .order-row .status-dot.warn { background: #e19a3c; }
+    .order-row .name { flex: 1; font-weight: 500; }
+    .order-row .amount { font-weight: 600; }
+
+    /* ── Section heading ────────────────────────────────────────────── */
+    .section { padding: 56px 0; }
+    .section-heading { text-align: center; max-width: 620px; margin: 0 auto 40px; }
+    .section-heading.left { text-align: left; margin: 0 0 20px; max-width: none; }
+    .section-heading .eyebrow { color: var(--primary); font-weight: 600; font-size: 12px; letter-spacing: 0.03em; }
+    .section-heading h2 { font-size: 28px; font-weight: 700; margin: 8px 0; }
+    .section-heading p { color: var(--text-secondary); font-size: 14px; margin: 0; }
+
+    @media (max-width: 900px) {
+      .section-heading h2 { font-size: 22px; }
+    }
+
+    /* ── Features grid ──────────────────────────────────────────────── */
+    .features-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+    .feature-card {
+      width: 280px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .feature-icon {
+      width: 42px; height: 42px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--primary);
+      margin-bottom: 14px;
+    }
+    .feature-card h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+    .feature-card p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+    /* ── About ──────────────────────────────────────────────────────── */
+    .about .container { display: flex; align-items: flex-start; gap: 56px; }
+    .about-media { flex: 4; min-width: 0; }
+    .about-media .mock-card + .mock-card { margin-top: 20px; }
+    .about-text { flex: 5; min-width: 0; }
+    .about-text p { font-size: 15px; color: var(--text); margin: 0 0 16px; }
+    .highlight-row { display: flex; gap: 14px; margin-bottom: 16px; align-items: flex-start; }
+    .highlight-icon {
+      width: 36px; height: 36px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 9px;
+      background: rgba(0, 0, 0, 0.06);
+      color: var(--primary);
+    }
+    .highlight-row h4 { font-size: 15px; font-weight: 600; margin: 0 0 3px; }
+    .highlight-row p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+
+    @media (max-width: 900px) {
+      .about .container { flex-direction: column; }
+    }
+
+    /* ── Pricing ────────────────────────────────────────────────────── */
+    .pricing { background: var(--surface); }
+    .billing-toggle {
+      width: 260px;
+      height: 46px;
+      margin: 28px auto;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 23px;
+      padding: 4px;
+      position: relative;
+      cursor: pointer;
+      display: flex;
+    }
+    .billing-toggle .slider {
+      position: absolute;
+      top: 4px; left: 4px;
+      width: calc(50% - 4px);
+      height: calc(100% - 8px);
+      border-radius: 19px;
+      background: var(--primary);
+      transition: transform 0.22s ease, background-color 0.35s ease;
+    }
+    .billing-toggle.annual .slider { transform: translateX(0); background: var(--primary); }
+    .billing-toggle.monthly .slider { transform: translateX(100%); background: var(--accent); }
+    .billing-toggle span {
+      flex: 1;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+    }
+    .billing-toggle.annual span.annual-label,
+    .billing-toggle.monthly span.monthly-label {
+      color: var(--on-primary);
+    }
+
+    .pricing-cards { display: flex; gap: 24px; align-items: stretch; }
+    .price-card {
+      flex: 1;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      border: 1px solid var(--border);
+      background: #fff;
+      transition: background-color 0.35s ease, color 0.2s ease;
+    }
+    .price-card.premium { border-color: transparent; color: var(--on-primary); background: var(--primary); }
+    .price-card.premium.monthly { background: var(--accent); }
+    .plan-name-row { display: flex; align-items: center; gap: 10px; }
+    .plan-name { font-size: 18px; font-weight: 700; }
+    .popular-badge {
+      display: none;
+      padding: 3px 8px;
+      border-radius: 20px;
+      background: var(--on-primary);
+      color: var(--primary);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .price-card.premium.annual .popular-badge { display: inline-block; }
+    .price-row { display: flex; align-items: flex-end; gap: 4px; margin-top: 10px; }
+    .price-amount { font-size: 32px; font-weight: 700; }
+    .price-period { font-size: 13px; opacity: 0.8; margin-bottom: 6px; }
+    .price-note { font-size: 12px; opacity: 0.8; margin-top: 2px; min-height: 16px; }
+    .plan-features { list-style: none; margin: 22px 0; padding: 0; }
+    .plan-features li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; margin-bottom: 12px; }
+    .plan-features li svg { flex-shrink: 0; margin-top: 1px; }
+    .price-card .btn-large { width: 100%; }
+    .price-card.premium .btn-large { background: var(--on-primary); color: var(--primary); }
+
+    @media (max-width: 700px) {
+      .pricing-cards { flex-direction: column; }
+    }
+
+    /* ── CTA banner ─────────────────────────────────────────────────── */
+    .cta-banner-wrap { padding: 64px 0; }
+    .cta-banner {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-radius: 20px;
+      padding: 44px 32px;
+      text-align: center;
+    }
+    .cta-banner h2 { font-size: 26px; font-weight: 700; margin: 0 0 10px; }
+    .cta-banner p { font-size: 14px; opacity: 0.85; margin: 0 0 24px; }
+    .cta-banner .btn-large { background: var(--on-primary); color: var(--primary); display: inline-flex; }
+
+    @media (max-width: 700px) {
+      .cta-banner h2 { font-size: 20px; }
+    }
+
+    /* ── Footer ─────────────────────────────────────────────────────── */
+    footer.site-footer {
+      border-top: 0.5px solid var(--border);
+      padding: 28px 0;
+    }
+    .footer-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .footer-brand { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
+    .footer-brand img { width: 22px; height: 22px; border-radius: 6px; }
+    .footer-links a { font-size: 12px; font-weight: 500; }
+
+    /* ── Mobile app prompt ──────────────────────────────────────────────
+       Full-screen, but with a real, clearly-visible dismiss action
+       ("Continue to website") — not a trap. Only shown to iOS/Android
+       visitors (see the detection script near the end of <body>), and only
+       via JS after the real page has already loaded, so a crawler that
+       doesn't execute this script (or Googlebot, which specifically
+       penalizes content-hiding mobile interstitials) still sees the actual
+       page — this never touches server-side response/robots behavior. */
+    .app-prompt {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
+    }
+    .app-prompt-inner { max-width: 360px; text-align: center; }
+    .app-prompt-inner img { width: 72px; height: 72px; border-radius: 18px; margin: 0 auto 24px; }
+    .app-prompt-inner h2 { font-size: 22px; font-weight: 700; margin: 0 0 10px; }
+    .app-prompt-inner p { font-size: 14px; color: var(--text-secondary); margin: 0 0 28px; }
+    .app-prompt-inner .btn-large { width: 100%; padding: 16px; font-size: 15px; }
+    .app-prompt-inner .continue-link {
+      display: inline-block;
+      margin-top: 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: underline;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-prompt" id="appPrompt">
+    <div class="app-prompt-inner">
+      <img src="assets/logo.png" alt="CostEra logo">
+      <h2>Get the CostEra app</h2>
+      <p>CostEra is better in the app — manage orders, inventory, and reports right from your pocket.</p>
+      <a class="btn btn-large" id="appStoreBtn" href="#">Open the App</a>
+      <br>
+      <button class="continue-link" id="continueWebBtn" type="button">Continue to website instead</button>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="container header-row">
+      <a href="#top" class="brand">
+        <img src="assets/logo.png" alt="CostEra logo">
+        CostEra
+      </a>
+      <nav class="main-nav">
+        <a href="#features">Features</a>
+        <a href="#about">About</a>
+        <a href="#pricing">Pricing</a>
+      </nav>
+      <div class="header-actions">
+        <a class="btn btn-text" href="https://app.costera.biz/login">Login</a>
+        <a class="btn btn-primary" href="https://app.costera.biz/register">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ── Hero ─────────────────────────────────────────────────────── -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-text">
+          <span class="eyebrow-pill">RUN YOUR BUSINESS FROM ANYWHERE</span>
+          <h1>The all-in-one workspace to run your business</h1>
+          <p class="lead">
+            Orders, quotes, purchases, inventory, and financial reports —
+            all in one place. Built for retail, manufacturing, and service
+            businesses of any size.
+          </p>
+          <div class="hero-ctas">
+            <a class="btn btn-large" href="https://app.costera.biz/register">Get Started Free</a>
+            <a class="btn btn-outline" href="https://app.costera.biz/login">Login</a>
+          </div>
+        </div>
+        <div class="hero-image">
+          <div class="mock-card" style="height:340px; display:flex; flex-direction:column;">
+            <div class="mock-dots">
+              <span class="mock-dot" style="background:#e05353"></span>
+              <span class="mock-dot" style="background:#e0a53c"></span>
+              <span class="mock-dot" style="background:#3cae5c"></span>
+            </div>
+            <div class="mock-row" style="flex:1;">
+              <div class="mock-tile" style="flex:3;">
+                <div class="mock-bars">
+                  <div class="mock-bar" style="height:40%"></div>
+                  <div class="mock-bar" style="height:65%"></div>
+                  <div class="mock-bar" style="height:50%"></div>
+                  <div class="mock-bar" style="height:90%"></div>
+                  <div class="mock-bar" style="height:70%"></div>
+                  <div class="mock-bar" style="height:100%"></div>
+                </div>
+              </div>
+              <div class="mock-stats-col">
+                <div class="mock-tile" style="flex:1;">
+                  <div class="mock-stat-value">128</div>
+                  <div class="mock-stat-label">Orders</div>
+                </div>
+                <div class="mock-tile" style="flex:1;">
+                  <div class="mock-stat-value">$24.8k</div>
+                  <div class="mock-stat-label">Revenue</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Features ─────────────────────────────────────────────────── -->
+    <section class="section" id="features">
+      <div class="container">
+        <div class="section-heading">
+          <div class="eyebrow">FEATURES</div>
+          <h2>Everything your business needs</h2>
+          <p>One workspace instead of five different tools stitched together.</p>
+        </div>
+        <div class="features-grid">
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            </div>
+            <h3>Sales, Orders &amp; Quotes</h3>
+            <p>Create orders and quotes, schedule deliveries, and turn quotes into orders in a click.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8V21H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+            </div>
+            <h3>Inventory Management</h3>
+            <p>Track stock across multiple locations and stop overselling — updated automatically as you buy and sell.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            </div>
+            <h3>Purchases &amp; Suppliers</h3>
+            <p>Manage purchase orders and supplier relationships, and keep product cost accurate automatically.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2v6L4 20a1 1 0 0 0 1 2h14a1 1 0 0 0 1-2L15 8V2"/><path d="M9 2h6"/><path d="M8.5 14h7"/></svg>
+            </div>
+            <h3>Manufacturing &amp; Recipes</h3>
+            <p>Plan raw materials, cost recipes, and track production for manufacturing businesses.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+            </div>
+            <h3>Financial Reports</h3>
+            <p>Sales, profit &amp; loss, and inventory reports whenever you need them — no spreadsheets required.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor" stroke="none" opacity="0.15"/></svg>
+            </div>
+            <h3>Capital &amp; Expenses</h3>
+            <p>Keep track of business assets and running costs alongside everything else.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3>Client Management</h3>
+            <p>Store client details, statements, and payment history in one searchable place.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-6h16l1 6"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M4 9v10h16V9"/></svg>
+            </div>
+            <h3>Built For Any Business</h3>
+            <p>Purpose-built flows for trading, manufacturing, and service businesses alike.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ── About ────────────────────────────────────────────────────── -->
+    <section class="section about" id="about">
+      <div class="container">
+        <div class="about-media">
+          <div class="mock-card">
+            <div class="order-row"><span class="status-dot"></span><span class="name">Order #1042</span><span class="amount">$240.00</span></div>
+            <div class="order-row"><span class="status-dot"></span><span class="name">Order #1041</span><span class="amount">$85.50</span></div>
+            <div class="order-row"><span class="status-dot warn"></span><span class="name">Purchase #88</span><span class="amount">$1,120.00</span></div>
+            <div class="order-row" style="margin-bottom:0"><span class="status-dot"></span><span class="name">Order #1040</span><span class="amount">$62.00</span></div>
+          </div>
+          <div class="mock-card">
+            <div style="font-size:12px; font-weight:600; margin-bottom:14px;">📈 This Month</div>
+            <div style="display:flex; gap:12px;">
+              <div class="mock-tile" style="flex:1;"><div class="mock-stat-value">342</div><div class="mock-stat-label">Products Sold</div></div>
+              <div class="mock-tile" style="flex:1;"><div class="mock-stat-value">$186</div><div class="mock-stat-label">Avg. Order</div></div>
+            </div>
+            <div class="mock-tile" style="margin-top:12px; font-size:12px; font-weight:500;">↗ Gross margin up 6% vs. last month</div>
+          </div>
+        </div>
+        <div class="about-text">
+          <div class="section-heading left">
+            <div class="eyebrow">ABOUT COSTERA</div>
+            <h2>The business manager that grows with you</h2>
+          </div>
+          <p>
+            CostEra started as a mobile app for small business owners who
+            needed something better than spreadsheets and paper receipts.
+            The web version brings the same tools to your desktop: manage
+            orders and quotes, track inventory across locations, generate
+            invoices, and see real financial reports — all synced with
+            your mobile app in real time.
+          </p>
+          <p>
+            Whether you run a retail shop, a manufacturing workshop, or a
+            service business, CostEra adapts its tools to how you actually
+            work — right down to which fields and reports you see, based
+            on the type of business you run.
+          </p>
+          <p>
+            No installs, no updates to wait for — sign in from any browser
+            and pick up exactly where you left off on your phone, with the
+            same data, the same day.
+          </p>
+
+          <div class="highlight-row">
+            <div class="highlight-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+            <div>
+              <h4>Real-Time Sync</h4>
+              <p>Every change on web reaches your mobile app instantly, and back.</p>
+            </div>
+          </div>
+          <div class="highlight-row">
+            <div class="highlight-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10z"/></svg></div>
+            <div>
+              <h4>Multi-Currency &amp; Language</h4>
+              <p>Work in your own currency and language — five languages supported.</p>
+            </div>
+          </div>
+          <div class="highlight-row">
+            <div class="highlight-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/><path d="m9 13 2 2 4-4"/></svg></div>
+            <div>
+              <h4>Secure Cloud Backups</h4>
+              <p>Your data lives safely in the cloud, backed up automatically.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Pricing ──────────────────────────────────────────────────── -->
+    <section class="section pricing" id="pricing">
+      <div class="container">
+        <div class="section-heading">
+          <div class="eyebrow">PRICING</div>
+          <h2>Simple, transparent pricing</h2>
+          <p>Start free. Upgrade when you need more.</p>
+        </div>
+
+        <div class="billing-toggle annual" id="billingToggle" role="button" tabindex="0" aria-label="Toggle monthly or annual billing">
+          <div class="slider"></div>
+          <span class="monthly-label">Monthly</span>
+          <span class="annual-label">Annual</span>
+        </div>
+
+        <div class="pricing-cards">
+          <div class="price-card">
+            <div class="plan-name-row"><span class="plan-name">Free</span></div>
+            <div class="price-row"><span class="price-amount">$0</span><span class="price-period">/forever</span></div>
+            <div class="price-note">&nbsp;</div>
+            <ul class="plan-features">
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Up to 9 products</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Up to 19 orders</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Client management</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Payment tracking</li>
+            </ul>
+            <a class="btn btn-large" href="https://app.costera.biz/register">Get Started</a>
+          </div>
+
+          <div class="price-card premium annual" id="premiumCard">
+            <div class="plan-name-row">
+              <span class="plan-name">Premium</span>
+              <span class="popular-badge">POPULAR</span>
+            </div>
+            <div class="price-row">
+              <span class="price-amount" id="priceAmount">$98.90</span>
+              <span class="price-period" id="pricePeriod">/year</span>
+            </div>
+            <div class="price-note" id="priceNote">≈ $8.24/mo — save ~45% vs. monthly</div>
+            <ul class="plan-features">
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Everything in Free</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Unlimited products &amp; orders</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Quotes</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Suppliers &amp; purchase orders</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Inventory across all locations</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Manufacturing &amp; recipe costing</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Sales, profit &amp; inventory reports</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Capital &amp; expenses tracking</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Order &amp; quote margin insights</li>
+              <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Priority support</li>
+            </ul>
+            <a class="btn btn-large" href="https://app.costera.biz/register">Get Premium</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── CTA banner ───────────────────────────────────────────────── -->
+    <section class="cta-banner-wrap">
+      <div class="container">
+        <div class="cta-banner">
+          <h2>Ready to run your business better?</h2>
+          <p>Create your free account — no card required.</p>
+          <a class="btn btn-large" href="https://app.costera.biz/register">Get Started Free</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-row">
+      <div class="footer-brand">
+        <img src="assets/logo.png" alt="CostEra logo">
+        <span id="footerCopyright"></span>
+      </div>
+      <div class="footer-links">
+        <a href="https://app.costera.biz/contactUs">Contact Us</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Billing toggle — mirrors the Flutter app's own sliding pill toggle.
+    // Purely a presentation choice (Annual defaults selected, POPULAR badge
+    // only shows on Annual, premium card color shifts on toggle) — no
+    // pricing math happens here beyond swapping between the two fixed
+    // numbers already quoted in the markup above.
+    (function () {
+      var toggle = document.getElementById('billingToggle');
+      var premiumCard = document.getElementById('premiumCard');
+      var amount = document.getElementById('priceAmount');
+      var period = document.getElementById('pricePeriod');
+      var note = document.getElementById('priceNote');
+
+      function setAnnual(isAnnual) {
+        toggle.classList.toggle('annual', isAnnual);
+        toggle.classList.toggle('monthly', !isAnnual);
+        premiumCard.classList.toggle('annual', isAnnual);
+        premiumCard.classList.toggle('monthly', !isAnnual);
+        amount.textContent = isAnnual ? '$98.90' : '$14.99';
+        period.textContent = isAnnual ? '/year' : '/month';
+        note.textContent = isAnnual
+          ? '≈ $8.24/mo — save ~45% vs. monthly'
+          : 'or $98.90/year — save ~45%';
+      }
+
+      var isAnnual = true;
+      toggle.addEventListener('click', function () {
+        isAnnual = !isAnnual;
+        setAnnual(isAnnual);
+      });
+      toggle.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          isAnnual = !isAnnual;
+          setAnnual(isAnnual);
+        }
+      });
+    })();
+
+    document.getElementById('footerCopyright').textContent =
+      '© ' + new Date().getFullYear() + ' CostEra. All rights reserved.';
+
+    // Mobile → app-store prompt. Full-screen but dismissible ("Continue to
+    // website instead"), by deliberate choice over a silent hard redirect —
+    // see the .app-prompt CSS comment for why. Runs after the page has
+    // rendered, so it never affects what a crawler (or a user with JS off)
+    // actually receives.
+    (function () {
+      var STORE_LINKS = {
+        ios: 'https://apps.apple.com/sa/app/costera/id6752457852',
+        android: 'https://play.google.com/store/apps/details?id=com.mini.manager',
+      };
+
+      function detectMobileOS() {
+        var ua = navigator.userAgent || navigator.vendor || '';
+        if (/iPad|iPhone|iPod/.test(ua)) return 'ios';
+        // iPadOS 13+ reports a desktop Mac user agent by default, but is
+        // still a touchscreen tablet — this is the standard sniff for it.
+        if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) return 'ios';
+        if (/android/i.test(ua)) return 'android';
+        return null;
+      }
+
+      var os = detectMobileOS();
+      if (!os) return;
+      // Dismissing lasts for the browser session, not forever — so it
+      // doesn't nag on every single visit, but does reappear if they come
+      // back another day still without the app installed.
+      if (sessionStorage.getItem('costera_app_prompt_dismissed') === '1') return;
+
+      var prompt = document.getElementById('appPrompt');
+      var appStoreBtn = document.getElementById('appStoreBtn');
+      var continueBtn = document.getElementById('continueWebBtn');
+
+      appStoreBtn.href = STORE_LINKS[os];
+      appStoreBtn.textContent = os === 'ios' ? 'Open in the App Store' : 'Open in Google Play';
+
+      function dismissPrompt() {
+        sessionStorage.setItem('costera_app_prompt_dismissed', '1');
+        prompt.style.display = 'none';
+      }
+
+      prompt.style.display = 'flex';
+      // Focusing the primary action means a plain Enter/Space press (the
+      // browser's own default link-activation) already opens the store —
+      // the keydown handler below covers Escape (no native default) and
+      // Enter from anywhere else in the prompt (e.g. focus not yet moved).
+      appStoreBtn.focus();
+      continueBtn.addEventListener('click', dismissPrompt);
+      prompt.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          dismissPrompt();
+        } else if (e.key === 'Enter' && document.activeElement !== appStoreBtn) {
+          e.preventDefault();
+          appStoreBtn.click();
+        }
+      });
+    })();
+  </script>
+
+</body>
+</html>

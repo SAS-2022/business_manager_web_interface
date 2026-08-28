@@ -2,6 +2,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/theme/responsive_utils.dart';
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 /// Web equivalent of mobile's PremiumAccessSheet
@@ -32,10 +33,41 @@ class _PremiumAccessSheetContent extends StatelessWidget {
   final String? uid;
   final String message;
 
+  void _goToSubscribe(BuildContext context) {
+    Navigator.pop(context);
+    if (uid != null) {
+      GoRouter.of(
+        context,
+      ).pushNamed('subscribe', pathParameters: {'uid': uid!});
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final responsive = ResponsiveUtils(context);
     final appLoc = AppLocalizations.of(context);
+    // Explicit rather than relying on showModalBottomSheet's own defaults —
+    // guarantees Escape/Enter work the same way every PremiumAccessSheet
+    // caller gets them, regardless of framework version behavior.
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () =>
+            Navigator.of(context).pop(),
+        const SingleActivator(LogicalKeyboardKey.enter): () =>
+            _goToSubscribe(context),
+      },
+      child: Focus(
+        autofocus: true,
+        child: _buildSheet(context, responsive, appLoc),
+      ),
+    );
+  }
+
+  Widget _buildSheet(
+    BuildContext context,
+    ResponsiveUtils responsive,
+    AppLocalizations? appLoc,
+  ) {
     return SafeArea(
       child: Container(
         decoration: BoxDecoration(
@@ -101,14 +133,7 @@ class _PremiumAccessSheetContent extends StatelessWidget {
             ),
             SizedBox(height: responsive.scaleHeight(20)),
             GestureDetector(
-              onTap: () {
-                Navigator.pop(context);
-                if (uid != null) {
-                  GoRouter.of(
-                    context,
-                  ).pushNamed('subscribe', pathParameters: {'uid': uid!});
-                }
-              },
+              onTap: () => _goToSubscribe(context),
               child: Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(

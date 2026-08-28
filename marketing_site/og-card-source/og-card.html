@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+  Source for assets/social-preview.png (the Open Graph / Twitter Card share
+  image). Not part of the deployed site — nothing links to this file.
+  Regenerate the PNG with `node generate.js` in this same folder (needs
+  `npm install playwright` once, and `npx playwright install chromium` if
+  Chromium isn't already cached locally).
+-->
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+  .blob {
+    position: absolute;
+    top: -180px;
+    right: -160px;
+    width: 620px;
+    height: 620px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #2E5C82 0%, rgba(46,92,130,0) 70%);
+    opacity: 0.22;
+  }
+  .blob2 {
+    position: absolute;
+    bottom: -220px;
+    left: -140px;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 60% 60%, #000000 0%, rgba(0,0,0,0) 70%);
+    opacity: 0.05;
+  }
+  .content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 90px;
+  }
+  .logo-row { display: flex; align-items: center; gap: 16px; margin-bottom: 40px; }
+  .logo { width: 64px; height: 64px; border-radius: 16px; }
+  .brand { font-size: 30px; font-weight: 700; color: #000; letter-spacing: -0.01em; }
+  h1 {
+    font-size: 58px;
+    font-weight: 800;
+    color: #0b0d0f;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+    max-width: 880px;
+  }
+  p.tagline {
+    font-size: 24px;
+    color: #5b6470;
+    margin-top: 22px;
+    max-width: 720px;
+    font-weight: 400;
+  }
+  .chips { display: flex; gap: 14px; margin-top: 40px; flex-wrap: wrap; }
+  .chip {
+    padding: 10px 20px;
+    border-radius: 24px;
+    background: #f4f6f9;
+    border: 1px solid rgba(0,0,0,0.08);
+    font-size: 16px;
+    font-weight: 600;
+    color: #14171a;
+  }
+  .accent-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 10px;
+    background: linear-gradient(180deg, #2E5C82 0%, #000 100%);
+  }
+</style>
+</head>
+<body>
+  <div class="accent-bar"></div>
+  <div class="blob"></div>
+  <div class="blob2"></div>
+  <div class="content">
+    <div class="logo-row">
+      <img class="logo" src="../assets/logo.png">
+      <span class="brand">CostEra</span>
+    </div>
+    <h1>The all-in-one workspace to run your business</h1>
+    <p class="tagline">Orders, quotes, inventory, purchases &amp; financial reports — in one place.</p>
+    <div class="chips">
+      <span class="chip">Orders &amp; Quotes</span>
+      <span class="chip">Inventory</span>
+      <span class="chip">Purchases</span>
+      <span class="chip">Financial Reports</span>
+    </div>
+  </div>
+</body>
+</html>

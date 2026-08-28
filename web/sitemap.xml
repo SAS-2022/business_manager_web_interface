@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Deliberately just the one URL. Every other route in this app
+  (/login, /register, /home/:uid, ...) is either a thin auth form with no
+  unique content to rank on, or sits behind a Firebase uid path param that
+  only makes sense for a signed-in session — neither belongs in a sitemap.
+  The landing page at '/' is the only page built to be found via search.
+-->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://costera.biz/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

@@ -93,10 +93,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   width: responsive!.scaleWidth(72),
                   height: responsive!.scaleWidth(72),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: ClipRRect(
@@ -104,6 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Image.asset(
                       'assets/images/logo.png',
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
@@ -143,6 +143,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: appLoc!.firstName,
                     textCapitalization: TextCapitalization.words,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   icon: Icons.person_outline_rounded,
                   showDivider: true,
@@ -153,6 +155,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: appLoc!.lastName,
                     textCapitalization: TextCapitalization.words,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   icon: Icons.person_outline_rounded,
                   showDivider: false,
@@ -183,6 +187,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: appLoc!.emailAddress,
                     keyboardType: TextInputType.emailAddress,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   icon: Icons.mail_outline_rounded,
                   showDivider: true,
@@ -193,6 +199,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: appLoc!.password,
                     isPassword: true,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   icon: Icons.lock_outline_rounded,
                   showDivider: true,
@@ -203,6 +211,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     hintText: appLoc!.confirmPass,
                     isPassword: true,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => register(),
                   ),
                   icon: Icons.lock_outline_rounded,
                   showDivider: false,
@@ -218,8 +228,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onTap: register,
             child: Container(
               width: double.infinity,
-              padding:
-                  EdgeInsets.symmetric(vertical: responsive!.scaleHeight(15)),
+              padding: EdgeInsets.symmetric(
+                vertical: responsive!.scaleHeight(15),
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
@@ -249,8 +260,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     children: [
                       TextSpan(
-                          text:
-                              '${appLoc!.alreadyHaveAccount} '), // add to l10n
+                        text: '${appLoc!.alreadyHaveAccount} ',
+                      ), // add to l10n
                       TextSpan(
                         text: appLoc!.login,
                         style: TextStyle(
@@ -357,10 +368,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       if (result.user != null && result.user!.uid.isNotEmpty) {
         setState(() => isLoading = false);
         // ignore: use_build_context_synchronously
-        GoRouter.of(context).pushReplacementNamed(
-          'verifyEmail',
-          extra: emailAddress.text.trim(),
-        );
+        GoRouter.of(
+          context,
+        ).pushReplacementNamed('verifyEmail', extra: emailAddress.text.trim());
       } else {
         _snackbarWidget.content = appLoc!.connectionError;
         _snackbarWidget.showSnack();

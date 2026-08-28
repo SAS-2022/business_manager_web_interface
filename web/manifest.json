@@ -1,11 +1,11 @@
 {
-    "name": "business_manager_web_ui",
-    "short_name": "business_manager_web_ui",
+    "name": "CostEra - Business Management",
+    "short_name": "CostEra",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#2E5C82",
+    "description": "The all-in-one workspace for orders, quotes, inventory, purchases, and financial reports.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <!--
     If you are serving your web app in a path other than the root, change the
@@ -18,12 +18,89 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- ── SEO ──────────────────────────────────────────────────────────────
+       This is a client-rendered Flutter web SPA, not server-rendered HTML —
+       everything below (title, meta tags, JSON-LD) is real static markup
+       that IS crawlable as-is regardless of renderer, since it lives in
+       <head> before Flutter ever boots. The landing page's actual BODY
+       content (headline, feature copy, pricing) is a separate question:
+       it's only reliably crawlable if Flutter renders to real DOM text
+       (the "html" renderer) — if this build uses CanvasKit/Skwasm instead,
+       that content paints to a <canvas> and isn't text Google can read, no
+       matter how long it waits for JS. Worth deciding deliberately (and
+       ideally verifying with Google Search Console's URL inspection tool
+       once deployed) rather than assuming either way. -->
+  <title>CostEra — All-In-One Business Management Software</title>
+  <meta name="description" content="CostEra is the all-in-one workspace for orders, quotes, inventory, purchases, and financial reports — built for retail, manufacturing, and service businesses. Start free.">
+  <meta name="keywords" content="business management software, small business software, inventory management, order management, quote management, purchase orders, financial reports, business manager app">
+  <meta name="robots" content="index, follow">
+  <meta name="author" content="CostEra">
+  <link rel="canonical" href="https://costera.biz/">
+
+  <!-- Open Graph (Facebook, LinkedIn, WhatsApp, etc.) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="CostEra">
+  <meta property="og:title" content="CostEra — All-In-One Business Management Software">
+  <meta property="og:description" content="Orders, quotes, purchases, inventory, and financial reports — all in one place. Built for retail, manufacturing, and service businesses.">
+  <meta property="og:url" content="https://costera.biz/">
+  <!-- A real 1200×630 share card (logo, headline, feature chips) — built
+       as an HTML page and rendered to PNG via Playwright, not hand-drawn
+       or a cropped app icon. Regenerate the same way (see
+       marketing_site/README.md) if the branding/copy changes. -->
+  <meta property="og:image" content="https://costera.biz/social-preview.png">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CostEra — All-In-One Business Management Software">
+  <meta name="twitter:description" content="Orders, quotes, purchases, inventory, and financial reports — all in one place. Built for retail, manufacturing, and service businesses.">
+  <meta name="twitter:image" content="https://costera.biz/social-preview.png">
+
+  <!-- JSON-LD structured data — SoftwareApplication, so a rich search
+       result can show pricing/category directly. No aggregateRating/review
+       fields: fabricating those would violate Google's structured-data
+       guidelines (and is simply untrue) — add that block for real once
+       CostEra actually has reviews to report. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CostEra",
+    "url": "https://costera.biz/",
+    "applicationCategory": "BusinessApplication",
+    "operatingSystem": "Web",
+    "description": "CostEra is the all-in-one workspace for orders, quotes, inventory, purchases, and financial reports — built for retail, manufacturing, and service businesses.",
+    "offers": [
+      {
+        "@type": "Offer",
+        "name": "Free",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium — Monthly",
+        "price": "14.99",
+        "priceCurrency": "USD"
+      },
+      {
+        "@type": "Offer",
+        "name": "Premium — Annual",
+        "price": "98.90",
+        "priceCurrency": "USD"
+      }
+    ]
+  }
+  </script>
+
+  <meta name="theme-color" content="#2E5C82">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="business_manager_web_ui">
+  <meta name="apple-mobile-web-app-title" content="CostEra">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Web OAuth client ID for google_sign_in_web (client_type 3 in the
@@ -62,7 +139,6 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>business_manager_web_ui</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>

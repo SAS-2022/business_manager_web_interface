@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 class SocialMediaSignIn extends StatefulWidget {
   final VoidCallback onGoogleSignIn;
   final VoidCallback onAppleSignIn;
-  const SocialMediaSignIn(
-      {super.key, required this.onGoogleSignIn, required this.onAppleSignIn});
+  const SocialMediaSignIn({
+    super.key,
+    required this.onGoogleSignIn,
+    required this.onAppleSignIn,
+  });
 
   @override
   State<SocialMediaSignIn> createState() => _SocialMediaSignInState();
@@ -66,6 +69,7 @@ class _SocialMediaSignInState extends State<SocialMediaSignIn> {
                   'assets/images/google_logo.png',
                   height: responsive!.scaleHeight(24),
                   width: responsive!.scaleHeight(24),
+                  filterQuality: FilterQuality.high,
                 ),
                 SizedBox(width: responsive!.scaleWidth(8)),
                 Text(
@@ -119,6 +123,7 @@ class _SocialMediaSignInState extends State<SocialMediaSignIn> {
                     height: responsive!.scaleHeight(24),
                     width: responsive!.scaleHeight(24),
                     color: Colors.white,
+                    filterQuality: FilterQuality.high,
                   ),
                   SizedBox(width: responsive!.scaleWidth(8)),
                   Text(

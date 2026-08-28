@@ -129,10 +129,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   width: responsive!.scaleWidth(80),
                   height: responsive!.scaleWidth(80),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: ClipRRect(
@@ -140,6 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Image.asset(
                       'assets/images/logo.png',
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
@@ -182,6 +182,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: appLoc!.emailAddress,
                     keyboardType: TextInputType.emailAddress,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.next,
+                    onSubmitted: (_) => FocusScope.of(context).nextFocus(),
                   ),
                   icon: Icons.mail_outline_rounded,
                   showDivider: true,
@@ -193,6 +195,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     hintText: appLoc!.password,
                     isPassword: true,
                     fontSize: responsive!.scaleFont(14),
+                    textInputAction: TextInputAction.done,
+                    onSubmitted: (_) => _handleLogin(),
                   ),
                   icon: Icons.lock_outline_rounded,
                   showDivider: false,
@@ -218,8 +222,9 @@ class _LoginScreenState extends State<LoginScreen> {
             child: GestureDetector(
               onTap: () => GoRouter.of(context).pushNamed('forgot'),
               child: Padding(
-                padding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(12)),
+                padding: EdgeInsets.symmetric(
+                  vertical: responsive!.scaleHeight(12),
+                ),
                 child: MyText(
                   text: appLoc!.forgotPass,
                   fontScale: responsive!.scaleFont(12),
@@ -234,8 +239,9 @@ class _LoginScreenState extends State<LoginScreen> {
             onTap: _handleLogin,
             child: Container(
               width: double.infinity,
-              padding:
-                  EdgeInsets.symmetric(vertical: responsive!.scaleHeight(15)),
+              padding: EdgeInsets.symmetric(
+                vertical: responsive!.scaleHeight(15),
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
@@ -253,20 +259,23 @@ class _LoginScreenState extends State<LoginScreen> {
 
           // ── Divider ───────────────────────────────────────────────────────
           Padding(
-            padding:
-                EdgeInsets.symmetric(vertical: responsive!.scaleHeight(18)),
+            padding: EdgeInsets.symmetric(
+              vertical: responsive!.scaleHeight(18),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: Divider(
                     thickness: 0.5,
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
                   ),
                 ),
                 Padding(
                   padding: EdgeInsets.symmetric(
-                      horizontal: responsive!.scaleWidth(12)),
+                    horizontal: responsive!.scaleWidth(12),
+                  ),
                   child: MyText(
                     text: appLoc!.or,
                     fontScale: responsive!.scaleFont(12),
@@ -275,8 +284,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 Expanded(
                   child: Divider(
                     thickness: 0.5,
-                    color:
-                        Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                    color: Theme.of(
+                      context,
+                    ).dividerColor.withValues(alpha: 0.4),
                   ),
                 ),
               ],
@@ -287,8 +297,9 @@ class _LoginScreenState extends State<LoginScreen> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color:
-                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.6),
+              color: Theme.of(
+                context,
+              ).colorScheme.surface.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: Theme.of(context).dividerColor.withValues(alpha: 0.3),
@@ -296,10 +307,13 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             child: GestureDetector(
-              onTap: () {/* existing Google sign-in */},
+              onTap: () {
+                /* existing Google sign-in */
+              },
               child: Padding(
-                padding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(14)),
+                padding: EdgeInsets.symmetric(
+                  vertical: responsive!.scaleHeight(14),
+                ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -307,8 +321,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(
                       width: responsive!.scaleWidth(20),
                       height: responsive!.scaleWidth(20),
-                      child: Image.asset('assets/images/google_logo.png',
-                          fit: BoxFit.contain),
+                      child: Image.asset(
+                        'assets/images/google_logo.png',
+                        fit: BoxFit.contain,
+                        filterQuality: FilterQuality.high,
+                      ),
                     ),
                     SizedBox(width: responsive!.scaleWidth(10)),
                     MyText(
@@ -336,7 +353,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     children: [
                       TextSpan(
-                          text: '${appLoc!.dontHaveAccount} '), // add to l10n
+                        text: '${appLoc!.dontHaveAccount} ',
+                      ), // add to l10n
                       TextSpan(
                         text: appLoc!.register,
                         style: TextStyle(

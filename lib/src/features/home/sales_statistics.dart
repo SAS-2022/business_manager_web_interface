@@ -43,6 +43,9 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
   late double averageMargin = 0.0;
   late List<ChartData> marginData = [];
   Future<List<ChartData>>? getChargeData;
+  // Which visual form the revenue-split chart renders as — same
+  // Profit/Cost data underneath either way, just donut/pie/bar.
+  _RevenueChartType _chartType = _RevenueChartType.donut;
   final number = NumberFormat("#,##0.00", "en_US");
 
   @override
@@ -87,9 +90,15 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
               const SizedBox(height: 16),
               _buildMetricGrid(),
               const SizedBox(height: 24),
-              _buildSectionLabel(appLoc!.revenueSplit),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildSectionLabel(appLoc!.revenueSplit),
+                  _buildChartTypeToggle(),
+                ],
+              ),
               const SizedBox(height: 8),
-              _buildDonutChart(),
+              _buildRevenueChart(),
               const SizedBox(height: 24),
               if (topClients.isNotEmpty) ...[
                 _buildSectionLabel(appLoc!.topClient),
@@ -312,9 +321,58 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
     );
   }
 
-  // ─── Donut chart ──────────────────────────────────────────────────────────
+  // ─── Revenue-split chart — donut/pie/bar toggle ───────────────────────────
+  // Same Profit/Cost data (marginData) rendered as one of three chart
+  // types, switched via _buildChartTypeToggle(). Donut was the only option
+  // before; pie and bar reuse the exact same data/colors, just a different
+  // shape — some people read a bar comparison faster than a circular split.
 
-  Widget _buildDonutChart() {
+  Widget _buildChartTypeToggle() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _chartTypeButton(_RevenueChartType.donut, Icons.donut_large_rounded),
+          _chartTypeButton(_RevenueChartType.pie, Icons.pie_chart_rounded),
+          _chartTypeButton(_RevenueChartType.bar, Icons.bar_chart_rounded),
+        ],
+      ),
+    );
+  }
+
+  Widget _chartTypeButton(_RevenueChartType type, IconData icon) {
+    final selected = _chartType == type;
+    return GestureDetector(
+      onTap: () => setState(() => _chartType = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.symmetric(
+          horizontal: responsive!.scaleWidth(8),
+          vertical: responsive!.scaleHeight(6),
+        ),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).colorScheme.primary
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(7),
+        ),
+        child: Icon(
+          icon,
+          size: responsive!.scaleHeight(16),
+          color: selected
+              ? Theme.of(context).colorScheme.onPrimary
+              : Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRevenueChart() {
     final totalProfit = topClients.fold(
       0.0,
       (sum, c) => sum + (c.totalProfit ?? 0),
@@ -328,20 +386,11 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
       children: [
         SizedBox(
           height: responsive!.scaleHeight(180),
-          child: SfCircularChart(
-            series: <CircularSeries>[
-              DoughnutSeries<ChartData, String>(
-                dataSource: marginData,
-                xValueMapper: (d, _) => d.category,
-                yValueMapper: (d, _) => d.value,
-                innerRadius: '65%',
-                radius: '100%',
-                pointColorMapper: (d, _) =>
-                    d.category == 'Profit' ? Colors.blue : Colors.grey[300],
-                dataLabelSettings: const DataLabelSettings(isVisible: false),
-              ),
-            ],
-          ),
+          child: switch (_chartType) {
+            _RevenueChartType.donut => _buildCircularChart(innerRadius: '65%'),
+            _RevenueChartType.pie => _buildCircularChart(innerRadius: '0%'),
+            _RevenueChartType.bar => _buildBarChart(),
+          },
         ),
         // Custom legend
         Row(
@@ -357,6 +406,44 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
               'Cost  ${widget.currencySymbol}${number.format(totalCost)}',
             ),
           ],
+        ),
+      ],
+    );
+  }
+
+  Color? _marginColor(ChartData d) =>
+      d.category == 'Profit' ? Colors.blue : Colors.grey[300];
+
+  Widget _buildCircularChart({required String innerRadius}) {
+    return SfCircularChart(
+      series: <CircularSeries>[
+        DoughnutSeries<ChartData, String>(
+          dataSource: marginData,
+          xValueMapper: (d, _) => d.category,
+          yValueMapper: (d, _) => d.value,
+          innerRadius: innerRadius,
+          radius: '100%',
+          pointColorMapper: (d, _) => _marginColor(d),
+          dataLabelSettings: const DataLabelSettings(isVisible: false),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBarChart() {
+    return SfCartesianChart(
+      primaryXAxis: const CategoryAxis(isVisible: false),
+      primaryYAxis: const NumericAxis(isVisible: false),
+      plotAreaBorderWidth: 0,
+      series: <CartesianSeries>[
+        ColumnSeries<ChartData, String>(
+          dataSource: marginData,
+          xValueMapper: (d, _) => d.category,
+          yValueMapper: (d, _) => d.value,
+          pointColorMapper: (d, _) => _marginColor(d),
+          borderRadius: BorderRadius.circular(6),
+          width: 0.5,
+          dataLabelSettings: const DataLabelSettings(isVisible: false),
         ),
       ],
     );
@@ -934,6 +1021,8 @@ class _SalesStatisticsScreenState extends State<SalesStatisticsScreen> {
 }
 
 // ─── Helper types ──────────────────────────────────────────────────────────
+
+enum _RevenueChartType { donut, pie, bar }
 
 class _MetricItem {
   final IconData icon;

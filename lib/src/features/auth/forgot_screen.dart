@@ -84,10 +84,9 @@ class _ForgotScreenState extends State<ForgotScreen> {
                   width: responsive!.scaleWidth(80),
                   height: responsive!.scaleWidth(80),
                   decoration: BoxDecoration(
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: ClipRRect(
@@ -95,6 +94,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
                     child: Image.asset(
                       'assets/images/logo.png',
                       fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
                   ),
                 ),
@@ -134,6 +134,8 @@ class _ForgotScreenState extends State<ForgotScreen> {
                 hintText: appLoc!.emailAddress,
                 keyboardType: TextInputType.emailAddress,
                 fontSize: responsive!.scaleFont(14),
+                textInputAction: TextInputAction.done,
+                onSubmitted: (_) => _handleReset(),
               ),
               icon: Icons.mail_outline_rounded,
             ),
@@ -146,8 +148,9 @@ class _ForgotScreenState extends State<ForgotScreen> {
             onTap: _handleReset,
             child: Container(
               width: double.infinity,
-              padding:
-                  EdgeInsets.symmetric(vertical: responsive!.scaleHeight(15)),
+              padding: EdgeInsets.symmetric(
+                vertical: responsive!.scaleHeight(15),
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
@@ -171,10 +174,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
 
   // ── Grouped field row ──────────────────────────────────────────────────────
 
-  Widget _groupedField({
-    required Widget child,
-    required IconData icon,
-  }) {
+  Widget _groupedField({required Widget child, required IconData icon}) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
