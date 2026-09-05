@@ -9,13 +9,20 @@
        the Flutter app. It exists so the marketing landing page at
        costera.biz is genuinely crawlable (real DOM text) instead of living
        inside the Flutter web build, which renders everything to a
-       <canvas> (see the SEO discussion this was born from). The actual
-       app is meant to live at a separate subdomain (app.costera.biz,
-       pending hosting/DNS setup) — every Login/Register/Get Started link
-       below points there. This page intentionally has zero build step:
-       no bundler, no framework, so it's deployable as-is to any static
-       host (Firebase Hosting as a second site target, Netlify, S3+CDN,
-       GitHub Pages, ...).
+       <canvas> (see the SEO discussion this was born from). This page
+       intentionally has zero build step: no bundler, no framework.
+
+       Login/Register/Get Started/Contact Us links below are relative
+       (/login, /register, /contactUs), not absolute app.costera.biz URLs.
+       The Firebase Hosting config for this "marketing" target (see
+       firebase.json) also ships a copy of the built Flutter app
+       (app-shell.html + its JS/asset files, copied in at deploy time from
+       build/web) and a catch-all rewrite to app-shell.html for any request
+       that isn't one of this static site's own files. So those links open
+       the real app on the SAME costera.biz domain — no visible redirect
+       to a different subdomain. app.costera.biz still exists as a second
+       site (build/web deployed there directly) for bookmarked links, but
+       nothing here needs to point at it anymore.
 
        Content/copy is mirrored from lib/src/features/landing/landing_page.dart
        (the Flutter version, still used for signed-out visitors who land
@@ -41,14 +48,14 @@
        as an HTML page and rendered to PNG via Playwright, not hand-drawn
        or a cropped app icon. Regenerate the same way (see README.md) if
        the branding/copy changes. -->
-  <meta property="og:image" content="https://costera.biz/assets/social-preview.png">
+  <meta property="og:image" content="https://costera.biz/site-assets/social-preview.png">
   <meta property="og:locale" content="en_US">
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="CostEra — All-In-One Business Management Software">
   <meta name="twitter:description" content="Orders, quotes, purchases, inventory, and financial reports — all in one place. Built for retail, manufacturing, and service businesses.">
-  <meta name="twitter:image" content="https://costera.biz/assets/social-preview.png">
+  <meta name="twitter:image" content="https://costera.biz/site-assets/social-preview.png">
 
   <script type="application/ld+json">
   {
@@ -68,7 +75,7 @@
   </script>
 
   <meta name="theme-color" content="#2E5C82">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="icon" type="image/png" href="site-assets/favicon.png">
 
   <style>
     :root {
@@ -437,7 +444,7 @@
 
   <div class="app-prompt" id="appPrompt">
     <div class="app-prompt-inner">
-      <img src="assets/logo.png" alt="CostEra logo">
+      <img src="site-assets/logo.png" alt="CostEra logo">
       <h2>Get the CostEra app</h2>
       <p>CostEra is better in the app — manage orders, inventory, and reports right from your pocket.</p>
       <a class="btn btn-large" id="appStoreBtn" href="#">Open the App</a>
@@ -449,7 +456,7 @@
   <header class="site-header">
     <div class="container header-row">
       <a href="#top" class="brand">
-        <img src="assets/logo.png" alt="CostEra logo">
+        <img src="site-assets/logo.png" alt="CostEra logo">
         CostEra
       </a>
       <nav class="main-nav">
@@ -458,8 +465,8 @@
         <a href="#pricing">Pricing</a>
       </nav>
       <div class="header-actions">
-        <a class="btn btn-text" href="https://app.costera.biz/login">Login</a>
-        <a class="btn btn-primary" href="https://app.costera.biz/register">Get Started</a>
+        <a class="btn btn-text" href="/login">Login</a>
+        <a class="btn btn-primary" href="/register">Get Started</a>
       </div>
     </div>
   </header>
@@ -478,8 +485,8 @@
             businesses of any size.
           </p>
           <div class="hero-ctas">
-            <a class="btn btn-large" href="https://app.costera.biz/register">Get Started Free</a>
-            <a class="btn btn-outline" href="https://app.costera.biz/login">Login</a>
+            <a class="btn btn-large" href="/register">Get Started Free</a>
+            <a class="btn btn-outline" href="/login">Login</a>
           </div>
         </div>
         <div class="hero-image">
@@ -689,7 +696,7 @@
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Client management</li>
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Payment tracking</li>
             </ul>
-            <a class="btn btn-large" href="https://app.costera.biz/register">Get Started</a>
+            <a class="btn btn-large" href="/register">Get Started</a>
           </div>
 
           <div class="price-card premium annual" id="premiumCard">
@@ -714,7 +721,7 @@
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Order &amp; quote margin insights</li>
               <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Priority support</li>
             </ul>
-            <a class="btn btn-large" href="https://app.costera.biz/register">Get Premium</a>
+            <a class="btn btn-large" href="/register">Get Premium</a>
           </div>
         </div>
       </div>
@@ -726,7 +733,7 @@
         <div class="cta-banner">
           <h2>Ready to run your business better?</h2>
           <p>Create your free account — no card required.</p>
-          <a class="btn btn-large" href="https://app.costera.biz/register">Get Started Free</a>
+          <a class="btn btn-large" href="/register">Get Started Free</a>
         </div>
       </div>
     </section>
@@ -736,13 +743,13 @@
   <footer class="site-footer">
     <div class="container footer-row">
       <div class="footer-brand">
-        <img src="assets/logo.png" alt="CostEra logo">
+        <img src="site-assets/logo.png" alt="CostEra logo">
         <span id="footerCopyright"></span>
       </div>
       <div class="footer-links">
         <a href="/privacy">Privacy Policy</a>
         <a href="/terms">Terms &amp; Conditions</a>
-        <a href="https://app.costera.biz/contactUs">Contact Us</a>
+        <a href="/contactUs">Contact Us</a>
       </div>
     </div>
   </footer>

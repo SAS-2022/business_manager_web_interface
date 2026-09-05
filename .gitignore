@@ -43,3 +43,20 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Flutter web build output copied into marketing_site/ at deploy time by
+# marketing_site/sync-app-shell.sh (see firebase.json's "marketing" hosting
+# target's catch-all rewrite to app-shell.html). Generated, not authored —
+# regenerate via that script rather than committing it.
+/marketing_site/app-shell.html
+/marketing_site/main.dart.js
+/marketing_site/flutter.js
+/marketing_site/flutter_bootstrap.js
+/marketing_site/flutter_service_worker.js
+/marketing_site/canvaskit/
+/marketing_site/assets/
+/marketing_site/icons/
+/marketing_site/manifest.json
+/marketing_site/version.json
+/marketing_site/favicon.png
+/marketing_site/social-preview.png

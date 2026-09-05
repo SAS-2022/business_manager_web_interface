@@ -15,9 +15,15 @@
     {
       "target": "marketing",
       "public": "marketing_site",
-      "ignore": ["firebase.json", "**/.*", "og-card-source/**"],
+      "ignore": ["firebase.json", "**/.*", "og-card-source/**", "README.md"],
       "cleanUrls": true,
-      "trailingSlash": false
+      "trailingSlash": false,
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/app-shell.html"
+        }
+      ]
     },
     {
       "target": "app",
