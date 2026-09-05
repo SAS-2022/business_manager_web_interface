@@ -11,7 +11,6 @@ import 'package:business_manager_web_ui/src/features/auth/wrapper.dart';
 import 'package:business_manager_web_ui/src/features/clients/client_add_edit.dart';
 import 'package:business_manager_web_ui/src/features/clients/client_statement.dart';
 import 'package:business_manager_web_ui/src/features/clients/clients_view.dart';
-import 'package:business_manager_web_ui/src/features/contact_us_stub_screen.dart';
 import 'package:business_manager_web_ui/src/features/gallery/view_gallery.dart';
 import 'package:business_manager_web_ui/src/features/home/home_screen.dart';
 import 'package:business_manager_web_ui/src/features/products/add_product_screen.dart';
@@ -135,10 +134,17 @@ final goRouter = GoRouter(
       path: '/forgot',
       builder: (context, state) => const ForgotScreen(),
     ),
+    // Public contact form — reachable from the marketing site with no
+    // login/registration required (the whole point of a "Contact Us" link).
+    // Used to point at a placeholder stub ("coming soon") left over from
+    // before the real ContactUs screen existed; that stub is gone now, this
+    // just reuses the real screen with no uid, same as any signed-out
+    // visitor. contactUsId/:uid (below) is the in-app version reached from
+    // a signed-in user's Settings menu.
     GoRoute(
       name: 'contactUs',
       path: '/contactUs',
-      builder: (context, state) => const ContactUsStubScreen(),
+      builder: (context, state) => const ContactUs(),
     ),
     // Linked from products_screen.dart; real screens land in later stages.
     GoRoute(

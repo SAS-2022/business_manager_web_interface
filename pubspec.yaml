@@ -30,6 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Switches go_router from hash-based URLs (/#/login) to clean path-based
+  # ones (/login) — see main.dart's usePathUrlStrategy() call. Safe to add
+  # unconditionally since this project only ever targets web.
+  flutter_web_plugins:
+    sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

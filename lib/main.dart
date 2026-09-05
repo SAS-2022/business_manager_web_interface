@@ -11,50 +11,71 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'firebase_options.dart';
 
 void main() async {
-  runZonedGuarded(() async {
-    WidgetsFlutterBinding.ensureInitialized();
-    FlutterError.onError = (details) {
-      debugPrint('[FlutterError] ${details.exceptionAsString()}\n${details.stack}');
-    };
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      // Without this, go_router defaults to hash-based URLs (/#/login)
+      // instead of clean ones (/login). That's exactly why an external link
+      // straight to https://app.costera.biz/login was landing on the
+      // landing page instead: the server correctly served index.html for
+      // that path (the SPA rewrite was never the problem), but go_router
+      // read the (empty) hash fragment on boot, not the real path, and fell
+      // back to its default route. Every internal navigation inside the app
+      // already goes through GoRouter and was unaffected — this only ever
+      // broke a fresh page load hitting a path-based URL from outside.
+      usePathUrlStrategy();
+      FlutterError.onError = (details) {
+        debugPrint(
+          '[FlutterError] ${details.exceptionAsString()}\n${details.stack}',
+        );
+      };
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
 
-    // Local (localhost/127.0.0.1) runs talk to the Firebase emulators (run
-    // via `firebase emulators:start`), never the live production project —
-    // Stage 2 decision, to keep auth/Firestore testing from writing real
-    // user data. Host check (not kDebugMode) because profile/release builds
-    // — used here to dodge a DDC dev-mode web boot issue — report
-    // kDebugMode==false, and a real deployed domain is never localhost.
-    //
-    // Explicit opt-out for occasional real-account testing: open with
-    // ?emulator=false to skip the emulator and hit production instead. Never
-    // the default — always an explicit choice per session. go_router uses
-    // hash-based URLs (#/...), so a query param placed after the # would
-    // land in the fragment, not Uri.base.queryParameters — checking the raw
-    // URL string instead means it works no matter where it's placed.
-    final host = Uri.base.host;
-    final forceProdOverride = Uri.base.toString().contains('emulator=false');
-    final useEmulator =
-        !forceProdOverride && (host == 'localhost' || host == '127.0.0.1');
-    if (useEmulator) {
-      await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
-      FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
-      await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
-    }
-    final hittingProdFromLocalhost = forceProdOverride &&
-        (host == 'localhost' || host == '127.0.0.1');
+      // Local (localhost/127.0.0.1) runs talk to the Firebase emulators (run
+      // via `firebase emulators:start`), never the live production project —
+      // Stage 2 decision, to keep auth/Firestore testing from writing real
+      // user data. Host check (not kDebugMode) because profile/release builds
+      // — used here to dodge a DDC dev-mode web boot issue — report
+      // kDebugMode==false, and a real deployed domain is never localhost.
+      //
+      // Explicit opt-out for occasional real-account testing: open with
+      // ?emulator=false to skip the emulator and hit production instead.
+      // Never the default — always an explicit choice per session. Checking
+      // the raw URL string (rather than Uri.base.queryParameters) is what
+      // actually matters here now: this call runs before usePathUrlStrategy()
+      // takes effect for the very first frame, and it's a cheap way to stay
+      // correct regardless of where the query string ends up.
+      final host = Uri.base.host;
+      final forceProdOverride = Uri.base.toString().contains('emulator=false');
+      final useEmulator =
+          !forceProdOverride && (host == 'localhost' || host == '127.0.0.1');
+      if (useEmulator) {
+        await FirebaseAuth.instance.useAuthEmulator('localhost', 9099);
+        FirebaseFirestore.instance.useFirestoreEmulator('localhost', 8080);
+        await FirebaseStorage.instance.useStorageEmulator('localhost', 9199);
+      }
+      final hittingProdFromLocalhost =
+          forceProdOverride && (host == 'localhost' || host == '127.0.0.1');
 
-    runApp(RestartWidget(
-      child: ProviderScope(
-        child: MyApp(showProdWarningBanner: hittingProdFromLocalhost),
-      ),
-    ));
-  }, (error, stack) {
-    debugPrint('[runZonedGuarded] $error\n$stack');
-  });
+      runApp(
+        RestartWidget(
+          child: ProviderScope(
+            child: MyApp(showProdWarningBanner: hittingProdFromLocalhost),
+          ),
+        ),
+      );
+    },
+    (error, stack) {
+      debugPrint('[runZonedGuarded] $error\n$stack');
+    },
+  );
 }
 
 class MyApp extends ConsumerWidget {
@@ -87,8 +108,9 @@ class MyApp extends ConsumerWidget {
             ? TextDirection.rtl
             : TextDirection.ltr;
         Widget result = MediaQuery(
-          data: MediaQuery.of(context)
-              .copyWith(textScaler: const TextScaler.linear(1)),
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(1)),
           child: Directionality(
             textDirection: textDirection,
             child: child ?? const SizedBox.shrink(),

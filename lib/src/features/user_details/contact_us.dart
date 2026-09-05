@@ -104,10 +104,11 @@ class _ContactUsState extends State<ContactUs> {
     );
   }
 
-  Widget _fieldRow(
-      {required IconData icon,
-      required Widget child,
-      CrossAxisAlignment crossAxis = CrossAxisAlignment.center}) {
+  Widget _fieldRow({
+    required IconData icon,
+    required Widget child,
+    CrossAxisAlignment crossAxis = CrossAxisAlignment.center,
+  }) {
     return Row(
       crossAxisAlignment: crossAxis,
       children: [
@@ -168,26 +169,28 @@ class _ContactUsState extends State<ContactUs> {
         children: [
           // ── Sender details ────────────────────────────────────────────
           _sectionLabel(appLoc!.senderDetails),
-          _groupCard(children: [
-            _fieldRow(
-              icon: Icons.person_outline_rounded,
-              child: FlushTextField(
-                controller: nameController,
-                hintText: appLoc!.name,
-                textCapitalization: TextCapitalization.words,
-                fontSize: responsive!.scaleFont(13),
+          _groupCard(
+            children: [
+              _fieldRow(
+                icon: Icons.person_outline_rounded,
+                child: FlushTextField(
+                  controller: nameController,
+                  hintText: appLoc!.name,
+                  textCapitalization: TextCapitalization.words,
+                  fontSize: responsive!.scaleFont(13),
+                ),
               ),
-            ),
-            _fieldRow(
-              icon: Icons.mail_outline_rounded,
-              child: FlushTextField(
-                controller: emailController,
-                hintText: appLoc!.emailAddress,
-                keyboardType: TextInputType.emailAddress,
-                fontSize: responsive!.scaleFont(13),
+              _fieldRow(
+                icon: Icons.mail_outline_rounded,
+                child: FlushTextField(
+                  controller: emailController,
+                  hintText: appLoc!.emailAddress,
+                  keyboardType: TextInputType.emailAddress,
+                  fontSize: responsive!.scaleFont(13),
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
 
           SizedBox(height: responsive!.scaleHeight(20)),
 
@@ -211,7 +214,8 @@ class _ContactUsState extends State<ContactUs> {
                 Expanded(
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                        horizontal: responsive!.scaleWidth(8)),
+                      horizontal: responsive!.scaleWidth(8),
+                    ),
                     child: DynamicDropdown(
                       items: subjectOptions,
                       selectedValue: selectedOption,
@@ -234,23 +238,31 @@ class _ContactUsState extends State<ContactUs> {
 
           // ── Message ───────────────────────────────────────────────────
           _sectionLabel(appLoc!.messageContent),
-          _groupCard(children: [
-            _fieldRow(
-              icon: Icons.chat_bubble_outline_rounded,
-              child: FlushTextField(
-                controller: messageController,
-                hintText: appLoc!.messageContent,
-                textCapitalization: TextCapitalization.sentences,
-                fontSize: responsive!.scaleFont(13),
-                lines: 5,
+          _groupCard(
+            children: [
+              _fieldRow(
+                icon: Icons.chat_bubble_outline_rounded,
+                child: FlushTextField(
+                  controller: messageController,
+                  hintText: appLoc!.messageContent,
+                  textCapitalization: TextCapitalization.sentences,
+                  fontSize: responsive!.scaleFont(13),
+                  lines: 5,
+                ),
+                crossAxis: CrossAxisAlignment.start,
               ),
-              crossAxis: CrossAxisAlignment.start,
-            ),
-          ]),
+            ],
+          ),
 
-          // ── Screenshots (technical / complaint only) ──────────────────
-          if (selectedOption == appLoc!.technical ||
-              selectedOption == appLoc!.complaint) ...[
+          // ── Screenshots (technical / complaint only, and only for a
+          // signed-in visitor — the upload goes to Storage under this
+          // user's own uid-scoped folder, which anonymous requests can
+          // never write to regardless; a public visitor with no uid at
+          // all just doesn't get offered this, rather than the button
+          // failing silently with a permissions error). ─────────────────
+          if (widget.uid != null &&
+              (selectedOption == appLoc!.technical ||
+                  selectedOption == appLoc!.complaint)) ...[
             SizedBox(height: responsive!.scaleHeight(20)),
             _sectionLabel(appLoc!.screenShots),
             Container(
@@ -271,7 +283,8 @@ class _ContactUsState extends State<ContactUs> {
                           final index = entry.key;
                           return Padding(
                             padding: EdgeInsets.only(
-                                right: responsive!.scaleWidth(8)),
+                              right: responsive!.scaleWidth(8),
+                            ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8),
                               child: Image.network(
@@ -292,18 +305,18 @@ class _ContactUsState extends State<ContactUs> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: Theme.of(context)
-                                    .dividerColor
-                                    .withValues(alpha: 0.4),
+                                color: Theme.of(
+                                  context,
+                                ).dividerColor.withValues(alpha: 0.4),
                                 width: 0.5,
                               ),
                             ),
                             child: Icon(
                               Icons.add_photo_alternate_outlined,
                               size: responsive!.scaleHeight(24),
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ),
@@ -330,8 +343,9 @@ class _ContactUsState extends State<ContactUs> {
             onTap: _sendMessage,
             child: Container(
               width: double.infinity,
-              padding:
-                  EdgeInsets.symmetric(vertical: responsive!.scaleHeight(15)),
+              padding: EdgeInsets.symmetric(
+                vertical: responsive!.scaleHeight(15),
+              ),
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(12),
@@ -385,8 +399,9 @@ class _ContactUsState extends State<ContactUs> {
               onTap: () => context.pop(),
               child: Container(
                 width: double.infinity,
-                padding:
-                    EdgeInsets.symmetric(vertical: responsive!.scaleHeight(15)),
+                padding: EdgeInsets.symmetric(
+                  vertical: responsive!.scaleHeight(15),
+                ),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(12),
