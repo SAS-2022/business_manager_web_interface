@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "business-manager-a8c65"
-  }
+  },
+  "targets": {
+    "business-manager-a8c65": {
+      "hosting": {
+        "marketing": [
+          "business-manager-a8c65"
+        ],
+        "app": [
+          "mini-manager"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

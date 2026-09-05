@@ -3392,6 +3392,36 @@ abstract class AppLocalizations {
   /// **'Priority support'**
   String get prioritySup;
 
+  /// No description provided for @subscribeOnMobile.
+  ///
+  /// In en, this message translates to:
+  /// **'Subscribe from our mobile app'**
+  String get subscribeOnMobile;
+
+  /// No description provided for @subscribeOnMobileDesc.
+  ///
+  /// In en, this message translates to:
+  /// **'CostEra Premium subscriptions are currently available through our iOS and Android app. Subscribe there, and Premium unlocks here on the web automatically — no separate sign-up needed.'**
+  String get subscribeOnMobileDesc;
+
+  /// No description provided for @downloadForIOS.
+  ///
+  /// In en, this message translates to:
+  /// **'Download for iOS'**
+  String get downloadForIOS;
+
+  /// No description provided for @downloadForAndroid.
+  ///
+  /// In en, this message translates to:
+  /// **'Download for Android'**
+  String get downloadForAndroid;
+
+  /// No description provided for @manageSubscriptionOnDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your subscription from the App Store or Google Play on your device.'**
+  String get manageSubscriptionOnDevice;
+
   /// No description provided for @success.
   ///
   /// In en, this message translates to:

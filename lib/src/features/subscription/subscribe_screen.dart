@@ -2,9 +2,7 @@ import 'package:business_manager_web_ui/l10n/app_localizations.dart';
 import 'package:business_manager_web_ui/src/app/constants/apis.dart';
 import 'package:business_manager_web_ui/src/app/constants/dimensions.dart';
 import 'package:business_manager_web_ui/src/app/theme/responsive_utils.dart';
-import 'package:business_manager_web_ui/src/app/utils/components/snackbar_widget.dart';
 import 'package:business_manager_web_ui/src/app/utils/components/url_launcher_func.dart';
-import 'package:business_manager_web_ui/src/app/utils/services/revenuecat_web.dart';
 import 'package:business_manager_web_ui/src/app/widgets/Text/my_text.dart';
 import 'package:business_manager_web_ui/src/app/widgets/buttons/skeleton_loading.dart';
 import 'package:business_manager_web_ui/src/models/user_model.dart';
@@ -12,14 +10,25 @@ import 'package:business_manager_web_ui/src/services/database_service.dart';
 import 'package:flutter/material.dart';
 
 /// Web equivalent of mobile's SubscriptionScreen (subscription_screen.dart)
-/// — that file is a 2,400-line animated paywall (confetti, coupon codes,
-/// shimmer skeletons, gradient background) built around purchases_flutter,
-/// which has no web implementation at all. This is a from-scratch web
-/// build using RevenueCat's actual web product (Web Billing, via
-/// revenuecat_web.dart's dart:js_interop wrapper) in this app's existing
-/// clean/light design language rather than porting mobile's dark/gold
-/// theme — the coupon-code and confetti flourishes are dropped as
-/// non-essential; the core plan-selection-and-purchase flow is kept.
+/// — that file is a 2,400-line animated paywall built around
+/// purchases_flutter, which has no web implementation at all.
+///
+/// This used to be a real Stripe checkout via RevenueCat Web Billing
+/// (revenuecat_web.dart) — that flow worked end to end (verified with a
+/// live sandbox purchase), but is on pause: Stripe only lets you register
+/// an account from a specific allow-list of countries, and neither Saudi
+/// Arabia (where the business currently operates) nor Lebanon (the
+/// preferred registration country) are on it. Rather than block on
+/// resolving that, this screen now just sends web visitors to subscribe
+/// from the mobile app instead — Apple/Google handle payment there, no
+/// Stripe involved, and since it's the same RevenueCat customer either
+/// way, `isSubscribed` still syncs to the web app automatically once they
+/// do (same webhook, same Firestore doc, already confirmed working).
+///
+/// revenuecat_web.dart itself is untouched, not deleted — it's real,
+/// tested infrastructure worth keeping if a Merchant-of-Record option that
+/// actually supports these countries (Paddle looks viable) gets built
+/// later.
 class SubscribeScreen extends StatefulWidget {
   const SubscribeScreen({super.key, this.uid});
   final String? uid;
@@ -32,19 +41,13 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
   ResponsiveUtils? responsive;
   AppLocalizations? appLoc;
   DatabaseService db = DatabaseService();
-  SnackbarWidget snackbarWidget = SnackbarWidget();
   UrlLauncherFunc urlLaunch = UrlLauncherFunc();
   Future<UserDetails>? getCurrentUser;
-  Future<List<SubscriptionPlan>>? getOfferings;
   UserDetails currentUser = UserDetails();
-  String? selectedPackageId;
-  bool isPurchasing = false;
-  bool isOpeningPortal = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    snackbarWidget.context = context;
     appLoc = AppLocalizations.of(context);
     responsive = ResponsiveUtils(context);
   }
@@ -55,23 +58,9 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
     if (widget.uid != null) {
       getCurrentUser = fetchUser();
     }
-    getOfferings = _loadOfferings();
   }
 
   Future<UserDetails> fetchUser() async => db.getCurrentUser(uid: widget.uid);
-
-  Future<List<SubscriptionPlan>> _loadOfferings() async {
-    await RevenueCatWeb.configure(
-      apiKey: revenueCatWebSandbox,
-      appUserId: widget.uid ?? '',
-    );
-    final plans = await RevenueCatWeb.getOfferings();
-    // Default to the annual plan (mobile's own "isPopular" pick) once
-    // offerings actually load, so the continue button works immediately.
-    final annual = plans.where((p) => p.period == 'P1Y').firstOrNull;
-    selectedPackageId = (annual ?? plans.firstOrNull)?.packageId;
-    return plans;
-  }
 
   // ── Design helpers ─────────────────────────────────────────────────────────
 
@@ -188,39 +177,16 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
                 fontScale: responsive!.scaleFont(12),
               ),
             ],
-            SizedBox(height: responsive!.scaleHeight(24)),
-            // Only a Web Billing (Stripe) subscription has a management
-            // portal RevenueCat can hand back — one bought via the App
-            // Store/Play Store has no such URL and must be managed from
-            // that store instead, so this button only appears when we
-            // actually have somewhere to send the user.
-            GestureDetector(
-              onTap: isOpeningPortal ? null : _openManagementPortal,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: responsive!.scaleWidth(20),
-                  vertical: responsive!.scaleHeight(12),
-                ),
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    color: Theme.of(
-                      context,
-                    ).dividerColor.withValues(alpha: 0.4),
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: isOpeningPortal
-                    ? SizedBox(
-                        width: responsive!.scaleHeight(16),
-                        height: responsive!.scaleHeight(16),
-                        child: const CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : MyText(
-                        text: appLoc!.cancelSubscription,
-                        fontScale: responsive!.scaleFont(13),
-                        fontWeight: FontWeight.w500,
-                      ),
-              ),
+            SizedBox(height: responsive!.scaleHeight(20)),
+            // All subscriptions now originate on mobile (App Store/Play
+            // Store), so there's no web billing portal to link out to
+            // anymore — just point them at the store they subscribed
+            // through, same as mobile's own subscription_screen.dart does.
+            MyText(
+              text: appLoc!.manageSubscriptionOnDevice,
+              fontScale: responsive!.scaleFont(12),
+              align: TextAlign.center,
+              softWrap: true,
             ),
           ],
         ),
@@ -228,31 +194,10 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
     );
   }
 
-  Future<void> _openManagementPortal() async {
-    setState(() => isOpeningPortal = true);
-    try {
-      final url = await RevenueCatWeb.getManagementUrl();
-      if (url == null) {
-        if (mounted) {
-          snackbarWidget.content = appLoc!.manageSubscriptionThrough;
-          snackbarWidget.showSnack();
-        }
-        return;
-      }
-      await urlLaunch.launchUrlWidget(url);
-    } catch (e) {
-      if (mounted) {
-        snackbarWidget.content = e.toString();
-        snackbarWidget.showSnack();
-      }
-    } finally {
-      if (mounted) setState(() => isOpeningPortal = false);
-    }
-  }
-
   String _formatDate(DateTime date) => '${date.day}/${date.month}/${date.year}';
 
-  // ── Paywall ──────────────────────────────────────────────────────────────
+  // ── Paywall — sends the visitor to the mobile app instead of checking
+  // out on web (see the class doc comment for why). ─────────────────────────
 
   Widget _buildPaywall() {
     return SingleChildScrollView(
@@ -353,55 +298,13 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
 
               SizedBox(height: responsive!.scaleHeight(20)),
 
-              // Plans
+              // Pricing — informational only, no purchase action here.
               _sectionLabel(appLoc!.subscribe),
-              FutureBuilder<List<SubscriptionPlan>>(
-                future: getOfferings,
-                builder: (context, offeringsShot) {
-                  if (offeringsShot.connectionState ==
-                      ConnectionState.waiting) {
-                    return const Center(
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: CircularProgressIndicator(),
-                      ),
-                    );
-                  }
-                  if (offeringsShot.hasError ||
-                      (offeringsShot.data?.isEmpty ?? true)) {
-                    return _groupCard(
-                      children: [
-                        Padding(
-                          padding: responsive!.responsivePaddingM,
-                          child: Column(
-                            children: [
-                              MyText(
-                                text: appLoc!.noOfferingsAvailable,
-                                fontScale: responsive!.scaleFont(13),
-                              ),
-                              SizedBox(height: responsive!.scaleHeight(10)),
-                              GestureDetector(
-                                onTap: () => setState(() {
-                                  getOfferings = _loadOfferings();
-                                }),
-                                child: MyText(
-                                  text: appLoc!.retry,
-                                  fontScale: responsive!.scaleFont(13),
-                                  fontWeight: FontWeight.w500,
-                                  fontColor: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                  final plans = offeringsShot.data!;
-                  return Column(children: plans.map(_buildPlanCard).toList());
-                },
+              _groupCard(
+                children: [
+                  _priceRow(appLoc!.monthly, '\$14.99', '/month'),
+                  _priceRow(appLoc!.annual, '\$98.90', '/year'),
+                ],
               ),
 
               SizedBox(height: responsive!.scaleHeight(20)),
@@ -423,44 +326,69 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
                 ),
               ),
 
-              SizedBox(height: responsive!.scaleHeight(20)),
+              SizedBox(height: responsive!.scaleHeight(24)),
 
-              // Continue button
-              GestureDetector(
-                onTap: isPurchasing ? null : _handlePurchase,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    vertical: responsive!.scaleHeight(15),
-                  ),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: isPurchasing
-                        ? SizedBox(
-                            width: responsive!.scaleHeight(18),
-                            height: responsive!.scaleHeight(18),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Theme.of(context).colorScheme.onPrimary,
-                            ),
-                          )
-                        : MyText(
-                            text: appLoc!.subscribe,
-                            fontScale: responsive!.scaleFont(15),
-                            fontWeight: FontWeight.w500,
-                            fontColor: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                  ),
-                ),
+              // ── Subscribe on mobile ───────────────────────────────────
+              _sectionLabel(appLoc!.subscribeOnMobile),
+              MyText(
+                text: appLoc!.subscribeOnMobileDesc,
+                fontScale: responsive!.scaleFont(13),
+                softWrap: true,
+              ),
+              SizedBox(height: responsive!.scaleHeight(16)),
+
+              _storeButton(
+                assetPath: 'assets/images/apple_logo.png',
+                label: appLoc!.downloadForIOS,
+                url: appStoreUrl,
+                // Apple's own logo is meant to render as a flat white mark
+                // on a dark button — matches App Store badge conventions.
+                tintWhite: true,
+              ),
+              SizedBox(height: responsive!.scaleHeight(10)),
+              _storeButton(
+                assetPath: 'assets/images/google_logo.png',
+                label: appLoc!.downloadForAndroid,
+                url: playStoreUrl,
+                // Google's brand guidelines want their multi-color "G" kept
+                // as-is, never tinted monochrome — light button instead.
+                tintWhite: false,
               ),
 
               SizedBox(height: responsive!.scaleHeight(24)),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _priceRow(String plan, String price, String period) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: responsive!.scaleWidth(14),
+        vertical: responsive!.scaleHeight(12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: MyText(
+              text: plan,
+              fontScale: responsive!.scaleFont(14),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          MyText(
+            text: price,
+            fontScale: responsive!.scaleFont(15),
+            fontWeight: FontWeight.w700,
+          ),
+          MyText(
+            text: period,
+            fontScale: responsive!.scaleFont(12),
+            fontColor: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ],
       ),
     );
   }
@@ -492,173 +420,56 @@ class _SubscribeScreenState extends State<SubscribeScreen> {
     );
   }
 
-  Widget _buildPlanCard(SubscriptionPlan plan) {
-    final isSelected = selectedPackageId == plan.packageId;
-    final isAnnual = plan.period == 'P1Y';
+  Widget _storeButton({
+    required String assetPath,
+    required String label,
+    required String url,
+    required bool tintWhite,
+  }) {
     return GestureDetector(
-      onTap: () => setState(() => selectedPackageId = plan.packageId),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        margin: EdgeInsets.only(bottom: responsive!.scaleHeight(10)),
-        padding: EdgeInsets.all(responsive!.scaleWidth(14)),
+      onTap: () => urlLaunch.launchUrlWidget(url),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: responsive!.scaleHeight(13)),
         decoration: BoxDecoration(
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.06)
-              : Theme.of(context).colorScheme.surfaceContainerHighest,
+          color: tintWhite
+              ? Theme.of(context).colorScheme.primary
+              : Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).dividerColor.withValues(alpha: 0.3),
-            width: isSelected ? 1.5 : 0.5,
-          ),
+          border: tintWhite
+              ? null
+              : Border.all(
+                  color: Theme.of(context).dividerColor.withValues(alpha: 0.4),
+                  width: 0.5,
+                ),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 150),
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).dividerColor.withValues(alpha: 0.5),
-                  width: isSelected ? 0 : 1,
-                ),
-                color: isSelected
-                    ? Theme.of(context).colorScheme.primary
-                    : Colors.transparent,
-              ),
-              child: isSelected
-                  ? Icon(
-                      Icons.check,
-                      size: 12,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    )
-                  : null,
-            ),
-            SizedBox(width: responsive!.scaleWidth(12)),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      MyText(
-                        text: isAnnual ? appLoc!.annual : appLoc!.monthly,
-                        fontScale: responsive!.scaleFont(14),
-                        fontWeight: FontWeight.w600,
-                      ),
-                      if (isAnnual) ...[
-                        SizedBox(width: responsive!.scaleWidth(6)),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: MyText(
-                            text: appLoc!.popular,
-                            fontScale: responsive!.scaleFont(9),
-                            fontWeight: FontWeight.w600,
-                            fontColor: Theme.of(context).colorScheme.onPrimary,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                  MyText(
-                    text: plan.description,
-                    fontScale: responsive!.scaleFont(11),
-                    softWrap: true,
-                    maxLines: 2,
-                  ),
-                ],
+            SizedBox(
+              width: responsive!.scaleWidth(20),
+              height: responsive!.scaleWidth(20),
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+                filterQuality: FilterQuality.high,
+                color: tintWhite
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : null,
               ),
             ),
             SizedBox(width: responsive!.scaleWidth(10)),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                MyText(
-                  text: plan.formattedPrice,
-                  fontScale: responsive!.scaleFont(16),
-                  fontWeight: FontWeight.w700,
-                ),
-                MyText(
-                  text: '/${plan.periodLabel}',
-                  fontScale: responsive!.scaleFont(11),
-                ),
-              ],
+            MyText(
+              text: label,
+              fontScale: responsive!.scaleFont(14),
+              fontWeight: FontWeight.w500,
+              fontColor: tintWhite
+                  ? Theme.of(context).colorScheme.onPrimary
+                  : null,
             ),
           ],
         ),
       ),
     );
-  }
-
-  // ── Purchase flow ──────────────────────────────────────────────────────────
-
-  Future<void> _handlePurchase() async {
-    if (selectedPackageId == null) {
-      snackbarWidget.content = appLoc!.selectPlan;
-      snackbarWidget.showSnack();
-      return;
-    }
-    final plans = await getOfferings;
-    final plan = plans?.firstWhere((p) => p.packageId == selectedPackageId);
-    if (plan == null) {
-      snackbarWidget.content = appLoc!.noOfferingsAvailable;
-      snackbarWidget.showSnack();
-      return;
-    }
-    setState(() => isPurchasing = true);
-    try {
-      final active = await RevenueCatWeb.purchase(plan);
-      if (!active) {
-        snackbarWidget.content = appLoc!.purchaseFailed;
-        snackbarWidget.showSnack();
-        return;
-      }
-      await _updateUserAfterPurchase(plan);
-      if (mounted) {
-        snackbarWidget.content = appLoc!.welcomePre;
-        snackbarWidget.showSnack();
-        setState(() {});
-      }
-    } on SubscriptionCancelledException {
-      snackbarWidget.content = appLoc!.purchaseCancelled;
-      snackbarWidget.showSnack();
-    } catch (e) {
-      snackbarWidget.content = '${appLoc!.purchaseFailed}: $e';
-      snackbarWidget.showSnack();
-    } finally {
-      if (mounted) setState(() => isPurchasing = false);
-    }
-  }
-
-  // Mirrors mobile's own client-side write in _updateUserAfterPurchase — a
-  // Cloud Function webhook should also confirm this server-side (same as
-  // mobile), but the client-side write is what gives the user immediate
-  // access without waiting on the webhook round-trip.
-  Future<void> _updateUserAfterPurchase(SubscriptionPlan plan) async {
-    final isAnnual = plan.period == 'P1Y';
-    final planId = isAnnual ? 'annual' : 'monthly';
-    currentUser.isSubscribed = true;
-    currentUser.subscriptionPlan = planId;
-    currentUser.subscriptionStartDate = DateTime.now();
-    currentUser.willCancelAtPeriodEnd = false;
-    currentUser.cancellationRequestDate = null;
-    currentUser.subscriptionEndDate = isAnnual
-        ? DateTime.now().add(const Duration(days: 365))
-        : DateTime.now().add(const Duration(days: 30));
-    if (currentUser.uid != null) {
-      await db.updateCurrentUser(user: currentUser);
-    }
   }
 }

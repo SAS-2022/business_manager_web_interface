@@ -1744,6 +1744,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prioritySup => 'Priority support';
 
   @override
+  String get subscribeOnMobile => 'Subscribe from our mobile app';
+
+  @override
+  String get subscribeOnMobileDesc =>
+      'CostEra Premium subscriptions are currently available through our iOS and Android app. Subscribe there, and Premium unlocks here on the web automatically — no separate sign-up needed.';
+
+  @override
+  String get downloadForIOS => 'Download for iOS';
+
+  @override
+  String get downloadForAndroid => 'Download for Android';
+
+  @override
+  String get manageSubscriptionOnDevice =>
+      'Manage your subscription from the App Store or Google Play on your device.';
+
+  @override
   String get success => 'Success';
 
   @override

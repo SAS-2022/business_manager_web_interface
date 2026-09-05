@@ -305,8 +305,10 @@
       background: var(--primary);
       transition: transform 0.22s ease, background-color 0.35s ease;
     }
-    .billing-toggle.annual .slider { transform: translateX(0); background: var(--primary); }
-    .billing-toggle.monthly .slider { transform: translateX(100%); background: var(--accent); }
+    /* DOM order is Monthly (left), Annual (right) — the slider must follow
+       whichever label is actually active, not the opposite side. */
+    .billing-toggle.monthly .slider { transform: translateX(0); background: var(--accent); }
+    .billing-toggle.annual .slider { transform: translateX(100%); background: var(--primary); }
     .billing-toggle span {
       flex: 1;
       z-index: 1;
@@ -391,7 +393,8 @@
     }
     .footer-brand { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
     .footer-brand img { width: 22px; height: 22px; border-radius: 6px; }
-    .footer-links a { font-size: 12px; font-weight: 500; }
+    .footer-links a { font-size: 12px; font-weight: 500; margin-left: 16px; }
+    .footer-links a:first-child { margin-left: 0; }
 
     /* ── Mobile app prompt ──────────────────────────────────────────────
        Full-screen, but with a real, clearly-visible dismiss action
@@ -737,6 +740,8 @@
         <span id="footerCopyright"></span>
       </div>
       <div class="footer-links">
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms &amp; Conditions</a>
         <a href="https://app.costera.biz/contactUs">Contact Us</a>
       </div>
     </div>

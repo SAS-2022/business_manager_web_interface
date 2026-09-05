@@ -11,6 +11,26 @@
       }
     }
   },
+  "hosting": [
+    {
+      "target": "marketing",
+      "public": "marketing_site",
+      "ignore": ["firebase.json", "**/.*", "og-card-source/**"],
+      "cleanUrls": true,
+      "trailingSlash": false
+    },
+    {
+      "target": "app",
+      "public": "build/web",
+      "ignore": ["firebase.json", "**/.*"],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ],
   "firestore": {
     "rules": "firestore.rules"
   },

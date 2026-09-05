@@ -1,10 +1,36 @@
 rules_version = '2';
 
-// Emulator-only rules for local testing. Not deployed to production.
+// Mirrors what's actually deployed to production (previously this file was
+// a stale emulator-only placeholder, disconnected from reality — see
+// firestore.rules for the same issue and why it matters).
+//
+// Every current upload site (grepped across both the web and mobile
+// clients — StorageService/storage_service.dart is the only place either
+// app touches Firebase Storage) writes to one of two path shapes, both
+// under a per-user folder:
+//   - a real subfolder:      {uid}/logo, {uid}/gallery, {uid}/expenses, {uid}/assets
+//   - a flat, hyphenated folder name (web-only, for generated PDFs):
+//     {uid}-{orderId}-..., {uid}-sales_reports, etc. — no "/" after the
+//     uid, so a plain /{uid}/** rule would not cover these at all.
+// The single rule below handles both shapes with one condition.
 service firebase.storage {
   match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null &&
+        firestore.get(/databases/(default)/documents/user_collection/$(request.auth.uid)).data.level == 'admin';
+    }
+
+    match /{folder}/{allPaths=**} {
+      allow read, write: if request.auth != null &&
+        (folder == request.auth.uid ||
+         folder.matches(request.auth.uid + '-.*') ||
+         isAdmin());
+    }
+
+    // Default deny for anything not covered above.
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

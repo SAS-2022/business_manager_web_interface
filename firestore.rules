@@ -1,10 +1,183 @@
 rules_version = '2';
 
-// Emulator-only rules for local Stage 2+ testing. Not deployed to production.
+// This mirrors what's actually deployed to production (previously this file
+// was a stale emulator-only placeholder — `allow read, write: if
+// request.auth != null` for every document — completely disconnected from
+// reality, and dangerous if anyone ever ran a plain `firebase deploy`
+// without `--only hosting`). Keep this file in sync with the Console going
+// forward so that risk doesn't recur.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/user_collection/$(request.auth.uid)).data.level == 'admin';
+    }
+
+    // Helper function to check if user is accessing their own data
+    function isOwnDocument(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Allow users to read/write their own document only
+    match /user_collection/{userId} {
+
+      // Admin can read/write any user document
+      allow read, write: if isAdmin();
+      // Regular users can only read/write their own document
+      allow read, update, write, delete: if isOwnDocument(userId);
+
+      match /products/{productId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+
+        match /records/{recordId} {
+          allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        }
+      }
+
+      match /images/{imageId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /receipe/{receipeId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /raw/{rawId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /clients/{clientId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+
+        match /statement/{recordId} {
+          allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+        }
+      }
+
+      match /suppliers/{supplierId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /orders/{orderId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /quotes/{quoteId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /purchases/{purchaseId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /payments/{paymentId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /assets/{assetId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /expenses/{expenseId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /fixedcost/{fixedId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /settings/{settingsId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /financial_record/{fRecordId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+
+      match /scheduledReminders/{orderId} {
+        allow read, update, write, delete: if isAdmin() || (request.auth != null && request.auth.uid == userId);
+      }
+    }
+
+    // Public reference data for the business-type/category picker — read
+    // only, and nothing above grants write, so this is safe as `if true`.
+    match /business/{businessId} {
+      allow read: if true;
+    }
+
+    // Only ever written/read by Cloud Functions via the Admin SDK (see
+    // functions/index.js's scheduledTasks usage), which bypasses these
+    // rules entirely — no client code anywhere (web or mobile) touches
+    // this collection, so client access is denied outright. The previous
+    // version of this rule referenced an undefined `userId` (this match
+    // isn't nested under /user_collection/{userId}, so that name was never
+    // in scope) — it always failed closed by accident; this makes the same
+    // "no client access" outcome explicit and correct instead of a bug that
+    // happened to be harmless.
+    match /scheduledTasks/{taskId} {
+      allow read, write: if false;
+    }
+
+    // FAQ. Reading is meant to be public (it's help content shown to any
+    // visitor); only the admin-gated screens in the app ever create,
+    // update, or delete a question, so those are the only operations that
+    // need to require isAdmin() — previously all of read/write/delete were
+    // `if true`, letting anyone (logged in or not) vandalize or wipe the
+    // FAQ.
+    match /questions_collection/{questionId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Not referenced anywhere in the web app, the mobile app, or Cloud
+    // Functions — appears to be an unused/legacy collection. Denying
+    // client access entirely can't break anything currently working, and
+    // closes what was previously a fully public (no auth required at all)
+    // read/write hole.
+    match /notifications_history/{notification_id} {
+      allow read, write: if false;
+    }
+
+    // Same as above — unreferenced anywhere, previously fully public.
+    match /notification_templates/{notification_temp_id} {
+      allow read, write: if false;
+    }
+
+    // Default deny for anything not explicitly matched above.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
+    }
+
+    // Collection-group rule for querying "records" across every product at
+    // once (product_service.dart's streamProductRecords, which already
+    // filters `where('userId', isEqualTo: uid)` client-side) — Firestore
+    // requires a rule shaped like this for a collection-group query to be
+    // permitted at all, on top of the more specific nested rule above.
+    // Previously the read side had no ownership check whatsoever (`if
+    // request.auth != null`), so any signed-in user could read every other
+    // user's product sales-record history via this collection-group query.
+    // Scoping read to the same field the client already filters by doesn't
+    // change what a legitimate query returns — it only stops a query that
+    // omits/forges that filter from working.
+    match /{path=**}/records/{recordId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow write: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Public "Contact Us" form submissions — createNewMessage() is the only
+    // client call anywhere against this collection (a plain top-level
+    // collection, not nested under anything, so the previous {path=**}
+    // prefix was broader than the app actually needs — it would have
+    // accepted a write to a same-named subcollection nested anywhere in the
+    // entire database). No client code ever reads this collection — reading
+    // is now admin-only instead of "any signed-in user", since previously
+    // any user with an account could browse every visitor's submitted name/
+    // email/message.
+    match /contact_messages/{messageId} {
+      allow create: if true;
+      allow read: if isAdmin();
     }
   }
 }

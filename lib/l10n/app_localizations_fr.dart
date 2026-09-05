@@ -1771,6 +1771,24 @@ class AppLocalizationsFr extends AppLocalizations {
   String get prioritySup => 'Support prioritaire';
 
   @override
+  String get subscribeOnMobile =>
+      'Abonnez-vous depuis notre application mobile';
+
+  @override
+  String get subscribeOnMobileDesc =>
+      'Les abonnements CostEra Premium sont actuellement disponibles via notre application iOS et Android. Abonnez-vous là-bas, et Premium se débloque automatiquement ici sur le web, sans inscription supplémentaire.';
+
+  @override
+  String get downloadForIOS => 'Télécharger pour iOS';
+
+  @override
+  String get downloadForAndroid => 'Télécharger pour Android';
+
+  @override
+  String get manageSubscriptionOnDevice =>
+      'Gérez votre abonnement depuis l\'App Store ou Google Play sur votre appareil.';
+
+  @override
   String get success => 'Succès';
 
   @override

@@ -3,9 +3,21 @@
 // from mobile's Android/iOS-restricted ones.
 const webMaps = 'AIzaSyAztLZN9WAJrZiTMvi9PMkmv7JU8VfSiK0';
 
-// RevenueCat Web Billing public API key — separate from mobile's own
-// Android/iOS RevenueCat keys (puchase_configuration.dart on mobile), since
-// Web Billing is configured as its own app within the same RevenueCat
-// project. This is the SANDBOX key (test/no real charges) — swap for the
-// production Web Billing key before going live.
+// RevenueCat Web Billing public API key — was going to back a direct
+// Stripe checkout on the Subscribe screen, but that's on pause: Stripe
+// doesn't support account registration from either Saudi Arabia (where the
+// business currently operates) or Lebanon (the preferred registration
+// country) — see subscribe_screen.dart's doc comment. Kept here rather
+// than deleted since it's still valid and the JS interop wrapper built
+// against it (revenuecat_web.dart) is real, working infrastructure worth
+// keeping around if a Paddle-based (or other MoR) web checkout gets built
+// later, or Stripe's country support changes.
 const revenueCatWebSandbox = 'rcb_sb_aWufSauYiVJEuslUrabdCTLzu';
+
+// App Store / Play Store listings — the Subscribe screen sends web
+// visitors here instead of checking out directly on web (see
+// subscribe_screen.dart). Same links as marketing_site/index.html's
+// STORE_LINKS — update both places if these ever change.
+const appStoreUrl = 'https://apps.apple.com/sa/app/costera/id6752457852';
+const playStoreUrl =
+    'https://play.google.com/store/apps/details?id=com.mini.manager';

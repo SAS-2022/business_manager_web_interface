@@ -1735,6 +1735,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get prioritySup => 'دعم ذو أولوية';
 
   @override
+  String get subscribeOnMobile => 'اشترك من تطبيقنا للجوال';
+
+  @override
+  String get subscribeOnMobileDesc =>
+      'اشتراكات CostEra المميزة متاحة حاليًا عبر تطبيقنا على iOS و Android. اشترك هناك، وستُفعَّل الميزات المميزة هنا على الويب تلقائيًا دون الحاجة لتسجيل منفصل.';
+
+  @override
+  String get downloadForIOS => 'تحميل لنظام iOS';
+
+  @override
+  String get downloadForAndroid => 'تحميل لنظام Android';
+
+  @override
+  String get manageSubscriptionOnDevice =>
+      'أدر اشتراكك من App Store أو Google Play على جهازك.';
+
+  @override
   String get success => 'نجح';
 
   @override
