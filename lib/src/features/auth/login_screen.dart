@@ -307,9 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             child: GestureDetector(
-              onTap: () {
-                /* existing Google sign-in */
-              },
+              onTap: _handleGoogleSignIn,
               child: Padding(
                 padding: EdgeInsets.symmetric(
                   vertical: responsive!.scaleHeight(14),
@@ -472,5 +470,25 @@ class _LoginScreenState extends State<LoginScreen> {
       snackbarWidget.showSnack();
     }
     setState(() => isLoading = false);
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    try {
+      setState(() => isLoading = true);
+      await as.signInWithGoogle();
+      // ignore: use_build_context_synchronously
+      if (!mounted) return;
+      // Route through Wrapper ('/'), same reasoning as email/password
+      // login above — it decides whether onboarding is still needed.
+      GoRouter.of(context).goNamed('/');
+    } catch (e) {
+      if (!e.toString().contains('cancelled') &&
+          !e.toString().contains('canceled')) {
+        snackbarWidget.content = e.toString();
+        snackbarWidget.showSnack();
+      }
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 }
